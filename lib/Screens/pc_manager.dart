@@ -944,6 +944,7 @@ class PcManagerState extends State<PcManager>
     listviewController.dispose();
     listviewController2.dispose();
     PcManager.myStompClient?.unsubscribe[widget.pcName] = true;
+    StoreKeyValue.removeData('lastPc');
   }
 
   @override
@@ -1012,6 +1013,8 @@ class PcManagerState extends State<PcManager>
     CommandShape.pcManager = this;
     LargeCommandShape.pcManager = this;
     PasswordsList.pcManager = this;
+
+    StoreKeyValue.saveData('lastPc',widget.pcName);
   }
 
   Future<void> refresh() async {

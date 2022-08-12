@@ -318,10 +318,10 @@ class HomeState extends State<Home> {
         });
 
 
-        widget.myStompClient.subscribeStatusCallbacks.forEach((key, value) { 
+        widget.myStompClient.subscribeStatusCallbacks.forEach((key, value) {
             widget.myStompClient.subscribeStatus(key, value);
         });
-        
+
       });
       widget.myStompClient.stompClient.activate();
       //==========================================================================
@@ -329,6 +329,25 @@ class HomeState extends State<Home> {
       setState(() {
         widget.isLoading = false;
       });
+
+      var lastPc=await StoreKeyValue.readStringData('lastPc');
+      print('lastPc=$lastPc');
+      if(lastPc!=''){
+        var index=0;
+        for(var pc in widget.pcListWidget){
+          if(pc.runtimeType==PcItem && (pc as PcItem).pcName==lastPc){
+            PcManager.token = Home.token;
+            PcManager.myStompClient = widget.myStompClient;
+            Navigator.pushNamed(context, '/pcManager', arguments: [
+              lastPc,
+              widget.pcMaxWattage[index ],
+              widget.pcBatteryCapacity[index ],
+              widget.pcStatus[lastPc].toString()
+            ]);
+          }
+          index++;
+        }
+      }
     });
   }
 

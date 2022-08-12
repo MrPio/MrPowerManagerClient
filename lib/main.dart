@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
       title: 'Welcome to Flutter',
       theme: ThemeData.dark(),
       routes: <String, WidgetBuilder>{
-        '/': (BuildContext context) => Entry(), //<-- TODO
+        '/': (BuildContext context) => MyKeyboardListener(), //<-- TODO
         '/login': (BuildContext context) => Login(),
         '/signup': (BuildContext context) => const Signup(),
         '/home': (BuildContext context) => Home(),
