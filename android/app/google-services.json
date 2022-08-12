@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "642151913277",
+    "project_id": "mrpowermanager",
+    "storage_bucket": "mrpowermanager.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:642151913277:android:e45aff37eef00ef59c1754",
+        "android_client_info": {
+          "package_name": "com.mrpio.mr_power_manager_client"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "642151913277-3sj2ufa45b13f8efhg6pjsts7snfbmfb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArfegALL3pgHv5PMOn1A_YaUM-5ZfFwxg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "642151913277-3sj2ufa45b13f8efhg6pjsts7snfbmfb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
