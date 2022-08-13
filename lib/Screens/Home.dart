@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,6 +37,7 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   bool tapped=false;
+  String message='';
 
   @override
   Widget build(BuildContext context) {
@@ -314,6 +317,40 @@ class HomeState extends State<Home> {
               Home.pcManagerState?.widget.online = state;
               // print(Home.pcManagerState?.widget.online);
             });
+          }
+        });
+
+        widget.myStompClient.subscribeMessage(stompFrame, (map) {
+          var max=int.parse(map['message'].split('@@@')[2]);
+          var index=int.parse(map['message'].split('@@@')[1]);
+          if(index==0) {
+            message='';
+          }
+          message+=map['message'].split('@@@')[3];
+          if(index==max) {
+            var image=base64Decode(message);
+            if (map['message'].split('@@@')[0] == "STREAMING") {
+              Home.pcManagerState?.myKeyboardListener?.setState(() {
+                Home.pcManagerState?.myKeyboardListener?.base64String =
+                    image;
+                Future.delayed(const Duration(milliseconds: 200),(){
+                  Home.pcManagerState?.myKeyboardListener?.oldImage =
+                      image;
+                });
+              });
+            }
+
+            else if (map['message'].split('@@@')[0] == "WEBCAM") {
+              Home.pcManagerState?.webcamStreaming?.setState(() {
+                Home.pcManagerState?.webcamStreaming?.base64String =
+                    image;
+                var lap=Home.pcManagerState?.webcamStreaming?.lastSpeed??50;
+                Future.delayed(Duration(milliseconds: 130-lap),(){
+                  Home.pcManagerState?.webcamStreaming?.oldImage =
+                      image;
+                });
+              });
+            }
           }
         });
 

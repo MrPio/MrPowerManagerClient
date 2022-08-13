@@ -96,8 +96,8 @@ class _LargeCommandShapeState extends State<LargeCommandShape> {
           borderRadius: _borderRadius,
         ),
         height: adjustSizeHorizontally(context, widget.active ?
-        widget.title.toLowerCase().contains('wattage')?406 :390:
-        widget.title.toLowerCase().contains('wattage')?106:90),
+        widget.title.toLowerCase().contains('wattage')?416 :390:
+        widget.title.toLowerCase().contains('wattage')?116:90),
         child: InkWell(
           onTap: () async {
             setState(() {

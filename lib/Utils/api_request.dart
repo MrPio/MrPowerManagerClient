@@ -60,11 +60,23 @@ class MyStompClient {
   subscribeOnline(StompFrame frame, Function(Map) onCallback) {
     print('subscribeOnline...');
     stompClient.subscribe(
-        destination: '/client/$token/online',
+        destination: '/client/${keepOnlyAlphaNum(token)}/online',
         callback: (StompFrame frame) {
           if (frame.body != null) {
             var jsonData = json.decode(frame.body ?? '');
             // print(jsonData);
+            onCallback(jsonData);
+          }
+        });
+  }
+
+  subscribeMessage(StompFrame frame, Function(Map) onCallback) {
+    print('subscribeMessage...');
+    stompClient.subscribe(
+        destination: '/both/${keepOnlyAlphaNum(token)}/message',
+        callback: (StompFrame frame) {
+          if (frame.body != null) {
+            var jsonData = json.decode(frame.body ?? '');
             onCallback(jsonData);
           }
         });
@@ -75,7 +87,7 @@ class MyStompClient {
 
     unsubscribe[pcName]=false;
     stompClient.subscribe(
-        destination: '/client/$token/${keepOnlyAlphaNum(pcName)}/status',
+        destination: '/client/${keepOnlyAlphaNum(token)}/${keepOnlyAlphaNum(pcName)}/status',
         callback: (StompFrame frame) {
           // print('uns:  '+unsubscribe.toString());
           if(unsubscribe[pcName]??false) {

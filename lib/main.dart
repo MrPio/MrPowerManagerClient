@@ -6,6 +6,7 @@ import 'package:mr_power_manager_client/Screens/Signup.dart';
 import 'package:mr_power_manager_client/Screens/add_pc.dart';
 import 'package:mr_power_manager_client/Screens/pc_manager.dart';
 import 'package:mr_power_manager_client/Screens/test.dart';
+import 'package:mr_power_manager_client/Screens/webcam_streaming.dart';
 import 'package:mr_power_manager_client/Utils/StoreKeyValue.dart';
 
 import 'Screens/keyboard_listner.dart';
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
       title: 'Welcome to Flutter',
       theme: ThemeData.dark(),
       routes: <String, WidgetBuilder>{
-        '/': (BuildContext context) => MyKeyboardListener(), //<-- TODO
+        '/': (BuildContext context) => Entry(), //<-- TODO
         '/login': (BuildContext context) => Login(),
         '/signup': (BuildContext context) => const Signup(),
         '/home': (BuildContext context) => Home(),
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         '/test': (BuildContext context) => const Test(),
         '/addPc': (BuildContext context) => AddPc(),
         '/keyboardListener': (BuildContext context) => MyKeyboardListener(),
+        '/webcamStreaming': (BuildContext context) => WebcamStreaming(),
       },
     );
   }

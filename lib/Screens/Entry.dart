@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mr_power_manager_client/Utils/SnackbarGenerator.dart';
 import 'package:mr_power_manager_client/Utils/StoreKeyValue.dart';
@@ -37,7 +38,9 @@ class _EntryState extends State<Entry> {
   @override
   void initState() {
     selectRoute(context);
-
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     super.initState();
   }
 

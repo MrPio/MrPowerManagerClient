@@ -4,12 +4,16 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_spinbox/flutter_spinbox.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:mr_power_manager_client/Pages/passwords_list.dart';
+import 'package:mr_power_manager_client/Screens/keyboard_listner.dart';
 import 'package:mr_power_manager_client/Screens/wattage_consumption.dart';
+import 'package:mr_power_manager_client/Screens/webcam_streaming.dart';
 import 'package:mr_power_manager_client/Utils/StoreKeyValue.dart';
 import 'package:mr_power_manager_client/Utils/size_adjustaments.dart';
+import 'package:mr_power_manager_client/Widgets/icon_ink_well.dart';
 
 import '../Pages/input_dialog.dart';
 import '../Styles/background_gradient.dart';
@@ -107,6 +111,9 @@ class PcManagerState extends State<PcManager>
   ScrollController listviewController = ScrollController();
   ScrollController listviewController2 = ScrollController();
   PageController pageController = PageController(initialPage: 0);
+  MyKeyboardListenerState? myKeyboardListener;
+  WebcamStreamingState? webcamStreaming;
+
   late AnimationController _FABController;
   bool _FABexpanded = false;
   static bool disposed = false;
@@ -121,6 +128,8 @@ class PcManagerState extends State<PcManager>
   var passwordsList = PasswordsList(Colors.lightBlue);
 
   static bool passwordPaste=false;
+
+  int lastQuality=50;
 
   @override
   void didChangeDependencies() {
@@ -229,12 +238,14 @@ class PcManagerState extends State<PcManager>
         Icons.key,
         size: adjustSizeVertically(context, 38),
       ),
+      Container(),
     ];
 
     var FABcolors = [
       [Colors.blue[900], Colors.blue, Colors.white],
       [Colors.white, Colors.white, Colors.white],
       [Colors.deepOrange[800], Colors.amber[600], Colors.white],
+      [Colors.white, Colors.white, Colors.white],
     ];
 
     var FABonPress = [
@@ -261,6 +272,7 @@ class PcManagerState extends State<PcManager>
           scheduleRefresh();
         }
       },
+          () {},
     ];
 
     FAB = FloatingActionButton(
@@ -275,6 +287,7 @@ class PcManagerState extends State<PcManager>
       controlScreen(),
       chartsScreen(),
       passwordsScreen(),
+      remoteControlScreen(),
     ];
 
     return Container(
@@ -466,7 +479,7 @@ class PcManagerState extends State<PcManager>
                                                             Commands
                                                                 .SOUND_VALUE
                                                                 .name,
-                                                            value);
+                                                            value: value);
                                                       }),
                                                       ElementCircularState(
                                                           widget.brightness <
@@ -503,7 +516,7 @@ class PcManagerState extends State<PcManager>
                                                             Commands
                                                                 .BRIGHTNESS_VALUE
                                                                 .name,
-                                                            value);
+                                                            value:value);
                                                       }),
                                                       ElementCircularState(
                                                           widget.batteryPlugged
@@ -711,7 +724,7 @@ class PcManagerState extends State<PcManager>
                                               sendCommand(
                                                   null,
                                                   Commands.SOUND_VALUE.name,
-                                                  value);
+                                                  value:value);
                                             },
                                                 scale: headerBottomScale,
                                                 strict: true),
@@ -742,7 +755,7 @@ class PcManagerState extends State<PcManager>
                                                   null,
                                                   Commands
                                                       .BRIGHTNESS_VALUE.name,
-                                                  value);
+                                                  value:value);
                                             },
                                                 scale: headerBottomScale,
                                                 strict: true),
@@ -877,7 +890,7 @@ class PcManagerState extends State<PcManager>
         floatingActionButton: SizedBox(
           width: adjustSizeVertically(context, 74),
           height: adjustSizeVertically(context, 74),
-          child: _currentIndex != 1 ? FAB : Container(),
+          child: _currentIndex != 1 && _currentIndex!=3 ? FAB : Container(),
         ),
         bottomNavigationBar: BottomNavigationBar(
           selectedItemColor: Colors.white,
@@ -930,6 +943,10 @@ class PcManagerState extends State<PcManager>
             BottomNavigationBarItem(
               icon: Icon(_currentIndex == 2 ? Icons.key : Icons.key_outlined),
               label: "Passwords",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(_currentIndex == 2 ? Icons.settings_remote_outlined : Icons.settings_remote),
+              label: "Remote control",
             ),
           ],
         ),
@@ -1230,7 +1247,7 @@ class PcManagerState extends State<PcManager>
    * se il pc è online mando il comando tramite socket, altrimenti lo mando alla api per memorizzarlo
    */
   void sendCommand(DateTime? scheduledDate, String command,
-      [int value = -1]) async {
+  {int value = -1,bool snackbar=true}) async {
     var newToken = keepOnlyAlphaNum(PcManager.token);
     var newPcName = keepOnlyAlphaNum(widget.pcName);
     var formattedDate = '';
@@ -1243,8 +1260,11 @@ class PcManagerState extends State<PcManager>
           destination: "/app/scheduleCommand/$newToken/$newPcName",
           body: '$command~${value.toString()}~$formattedDate');
 
-      SnackBarGenerator.makeSnackBar(context, "Command sent successfully!",
-          millis: 500, color: Colors.amber);
+      if(snackbar) {
+        SnackBarGenerator.makeSnackBar(context, command.contains('RECORD_SECONDS')?
+        'Command sent successfully! Check your desktop to find your recording!':"Command sent successfully!",
+            millis: 500, color: Colors.amber);
+      }
     } else {
       var args = {
         'token': await StoreKeyValue.readStringData('token'),
@@ -1261,8 +1281,10 @@ class PcManagerState extends State<PcManager>
       var response =
           await requestData(context, HttpType.post, '/scheduleCommand', args);
       if (response['result'].toString().contains('successfully')) {
-        SnackBarGenerator.makeSnackBar(context, "Command sent successfully!",
+        if(snackbar) {
+          SnackBarGenerator.makeSnackBar(context, "Command sent successfully!",
             millis: 800, color: Colors.amber);
+        }
       } else {
         SnackBarGenerator.makeSnackBar(context, response['result'].toString(),
             millis: 1500, color: Colors.red);
@@ -1568,6 +1590,109 @@ class PcManagerState extends State<PcManager>
       children: [
         getSilverAnimatorBox(),
         passwordsList,
+      ],
+    );
+  }
+
+  remoteControlScreen() {
+    return Column(
+      children: [
+        getSilverAnimatorBox(),
+        Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(adjustSizeHorizontally(context, 36.0)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+
+                  IconButton(
+                    icon: Icon(Icons.screen_share,color: Colors.yellow.shade200,),
+                    onPressed:    (){
+                      Navigator.pushNamed(context, '/keyboardListener');
+                    },
+                    splashColor: Colors.black.withOpacity(1),
+                    highlightColor: Colors.black.withOpacity(0.2),
+                    iconSize: 110,
+                  ),
+                  Text(
+                    'Remote control                                keyboard',
+                    style: GoogleFonts.lato(fontSize: 32,fontWeight: FontWeight.w300,
+                        color:Colors.yellow.shade300 ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 50 ),
+                  IconButton(
+                    icon: Icon(Icons.camera_alt,color: Colors.orange.shade200,),
+                    onPressed:    (){
+                      Navigator.pushNamed(context, '/webcamStreaming');
+
+                    },
+                    splashColor: Colors.black.withOpacity(1),
+                    highlightColor: Colors.black.withOpacity(0.2),
+                    iconSize: 110,
+                  ),
+                  Text(
+                    'Remote stream                       webcam',
+                    style: GoogleFonts.lato(fontSize: 32,fontWeight: FontWeight.w300,
+                        color:Colors.orange.shade300 ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 50 ),
+                  IconButton(
+                    icon: Icon(Icons.camera,color: Colors.red.shade200,),
+                    onPressed:    ()async{
+                      if(! await yesNoDialog(context, 'Wanna set your pc to record the screen? Please note that this feature required FFmpeg to be installed on your pc;'
+                          'you can follow this guide to do so: https://www.wikihow.com/Install-FFmpeg-on-Windows')){
+                        return;
+                      }
+                      var fps=await inputDialog(context, 'The number of frame per second. [1-60]'
+                          , '30', Icons.format_paint_sharp,numbers: true,title: 'FPS');
+                      if(fps=='' || int.parse(fps)>60||int.parse(fps)<1) {
+                        return;
+                      }
+                      int minutes=(await inputMinuteHours(context, 'Gimme the duration of the recording', Icons.timer));
+                      if(minutes==0){
+                        SnackBarGenerator.makeSnackBar(context, 'Please give me a value greater than 0!',color: Colors.red);
+                        return;
+                      }
+                      else if(minutes==-1){
+                        return;
+                      }
+                      var h265=await yesNoDialog(context, 'Wanna use the newer codec HEVC(H.265)? You gain'
+                          'better compression paying in higher cpu\'s usage',confirm: 'H.265',cancel: 'H.264');
+                      lastQuality = await showDialog<int>(
+                          context: context,
+                          builder: (context) => sliderDialog("Quality",lastQuality==-1?50:lastQuality,20,Icons.high_quality))??-1;
+                      if(lastQuality==-1){
+                        return;
+                      }
+                      var quality=51-lastQuality*51/100;
+
+                      var command='RECORD_SECONDS@@@$fps@@@${minutes * 60}@@@$quality@@@$h265';
+
+
+                      sendCommand(null, command);
+                    },
+                    splashColor: Colors.black.withOpacity(1),
+                    highlightColor: Colors.black.withOpacity(0.2),
+                    iconSize: 110,
+                  ),
+                  Text(
+                    'Schedule record                       screen',
+                    style: GoogleFonts.lato(fontSize: 32,fontWeight: FontWeight.w300,
+                        color:Colors.red.shade300 ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 60 ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

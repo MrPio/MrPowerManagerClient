@@ -189,14 +189,14 @@ class _CommandShapeState extends State<CommandShape> {
 if(widget.command==Commands.SHARE_CLIPBOARD){
   ClipboardData? data = await Clipboard.getData('text/plain');
   var dataStr=data?.text;
-  Home.pcManagerState?.sendCommand( scheduledDate, widget.command.name+"@@@@@@@@@@@@$dataStr",value);
+  Home.pcManagerState?.sendCommand( scheduledDate, widget.command.name+"@@@@@@@@@@@@$dataStr",value:value);
 }
 else if(widget.command==Commands.KEYBOARD){
-  Navigator.pushNamed(context, '/keyboardListener');
+  SnackBarGenerator.makeSnackBar(context, 'Please use the Remote control screen to gain full remote access to your pc!',color: Colors.lightBlue.shade300);
 }
 else{
 
-    Home.pcManagerState?.sendCommand( scheduledDate, widget.command.name,value);
+    Home.pcManagerState?.sendCommand( scheduledDate, widget.command.name,value:value);
 }
   }
 

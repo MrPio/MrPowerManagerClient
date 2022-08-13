@@ -211,11 +211,12 @@ class PasswordsListState extends State<PasswordsList> {
             );
           },
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              crossAxisSpacing: 6,
+              crossAxisSpacing: 4,
               mainAxisSpacing: 4,
-              childAspectRatio: 3,
-              maxCrossAxisExtent: adjustSizeHorizontally(context, 200)),
+              childAspectRatio: 2.7,
+              maxCrossAxisExtent: adjustSizeHorizontally(context, 240)),
         ),
+        SizedBox(height: MediaQuery.of(context).size.height*0.7*max(0,12-passwords.length)/12,)
       ],
     );
   }
