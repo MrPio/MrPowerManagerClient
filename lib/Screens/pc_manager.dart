@@ -1292,6 +1292,31 @@ class PcManagerState extends State<PcManager>
     }
   }
 
+  sendBase64(String data,String header){
+    Home.stopListenOnMessage=true;
+    setState(() {});
+    var BYTES_LIMIT=14000;
+    var max = data.length ~/ BYTES_LIMIT;
+    var msg='';
+    for(int i=0;i<max+1;i++){
+      if (data.length > BYTES_LIMIT){
+        msg = header+'@@@$i@@@$max@@@' + data.substring(0,BYTES_LIMIT);
+      }
+      else{
+        msg = header+'@@@$i@@@$max@@@' + data;
+      }
+
+      if (data.length > BYTES_LIMIT){
+      data = data.substring(BYTES_LIMIT);
+      }
+      PcManager.myStompClient?.stompClient.send(
+          destination: "/app/sendMessage/${PcManager.token}/${widget.pcName}", body: msg);
+
+      Home.stopListenOnMessage=false;
+
+    }
+  }
+
   controlScreen() {
     return Column(
       children: [
@@ -1316,7 +1341,7 @@ class PcManagerState extends State<PcManager>
             CommandShape(
                 widget.pcName,
                 Colors.deepOrange[400] ?? Colors.deepOrange,
-                widget.isLock ? 'Unlock' : 'Lock',
+                'Lock',
                 Icons.lock,
                 true,
                 Commands.LOCK),
@@ -1637,6 +1662,24 @@ class PcManagerState extends State<PcManager>
                     'Remote stream                       webcam',
                     style: GoogleFonts.lato(fontSize: 32,fontWeight: FontWeight.w300,
                         color:Colors.orange.shade300 ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 50 ),
+                  IconButton(
+                    icon: Icon(Icons.mic,color: Colors.red.shade200,),
+                    onPressed:    (){
+                      Navigator.pushNamed(context, '/sendTextVoice');
+
+                    },
+                    splashColor: Colors.black.withOpacity(1),
+                    highlightColor: Colors.black.withOpacity(0.2),
+                    iconSize: 110,
+                  ),
+                  Text(
+                    'Use your voice',
+                    style: GoogleFonts.lato(fontSize: 32,fontWeight: FontWeight.w300,
+                        color:Colors.red.shade300 ),
                     textAlign: TextAlign.center,
                   ),
 

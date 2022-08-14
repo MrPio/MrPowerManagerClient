@@ -23,6 +23,7 @@ class Home extends StatefulWidget {
   List<Widget> pcListWidget = [];
   List<Widget> shimmerPcListWidget = [];
   static String token = '';
+  static bool stopListenOnMessage=false;
   TextEditingController inputBoxText = TextEditingController();
   List<String> pcNames = [];
   Map<String, bool> pcStatus = {};
@@ -321,6 +322,9 @@ class HomeState extends State<Home> {
         });
 
         widget.myStompClient.subscribeMessage(stompFrame, (map) {
+          if(Home.stopListenOnMessage){
+            return;
+          }
           var max=int.parse(map['message'].split('@@@')[2]);
           var index=int.parse(map['message'].split('@@@')[1]);
           if(index==0) {

@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.mrpio.mr_power_manager_client">
-   <application
+
+    <application
+
         android:label="mr_power_manager_client"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
@@ -31,4 +33,8 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
+
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
 </manifest>

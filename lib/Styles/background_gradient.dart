@@ -9,7 +9,7 @@ BoxDecoration getBackgroundGradient() {
         Colors.grey[850]!,
         Colors.grey[900]!,
         Colors.grey[800]!,
-        Colors.grey[700]!,
+        Colors.grey[900]!,
       ],
     ),
   );

@@ -50,6 +50,9 @@ dependencies:
   dotted_border: ^2.0.0+2
   stomp_dart_client: ^0.4.4
   flutter_spinbox: ^0.9.0
+  vibration: ^1.7.5
+  record_mp3: ^3.0.0
+  permission_handler: ^9.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
