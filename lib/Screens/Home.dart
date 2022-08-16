@@ -16,6 +16,7 @@ import 'package:mr_power_manager_client/Widgets/pc_item.dart';
 import '../Pages/input_dialog.dart';
 import '../Styles/background_gradient.dart';
 import '../Utils/SnackbarGenerator.dart';
+import '../Widgets/process_box.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -328,16 +329,15 @@ class HomeState extends State<Home> {
           }
           message+=map['message'].split('@@@')[3];
           if(index==max) {
-            Uint8List image;
-            try{
-            image=base64Decode(message);
-            }catch(e){
-              return;
-            }
-
             if (map['message'].split('@@@')[0] == "STREAMING") {
+              Uint8List image;
+              try{
+                image=base64Decode(message);
+              }catch(e){
+                return;
+              }
               Home.pcManagerState?.myKeyboardListener?.setState(() {
-                Home.pcManagerState?.myKeyboardListener?.base64String =
+                Home.pcManagerState?.myKeyboardListener?.base64Image =
                     image;
                 Future.delayed(const Duration(milliseconds: 200),(){
                   Home.pcManagerState?.myKeyboardListener?.oldImage =
@@ -347,6 +347,12 @@ class HomeState extends State<Home> {
             }
 
             else if (map['message'].split('@@@')[0] == "WEBCAM") {
+              Uint8List image;
+              try{
+                image=base64Decode(message);
+              }catch(e){
+                return;
+              }
               Home.pcManagerState?.webcamStreaming?.setState(() {
                 Home.pcManagerState?.webcamStreaming?.frame = image;
                 var lap=Home.pcManagerState?.webcamStreaming?.lastSpeed??50;
@@ -354,6 +360,53 @@ class HomeState extends State<Home> {
                   Home.pcManagerState?.webcamStreaming?.oldImage =
                       image;
                 });
+              });
+            }
+
+            else if (map['message'].split('@@@')[0] == "TASK_MANAGER") {
+              log('TASK_MANAGER');
+              var windows=message.split('#');
+
+              List<String> windowsTitle = [];
+              List<Uint8List?> windowsIcon = [];
+              List<ProcessBox> windowsProcessBox=[];
+
+              for (var window in windows){
+                if(window=='' ||window.split('~').length<2) {
+                  continue;
+                }
+                windowsTitle.add(window.split('~')[0]);
+                Uint8List? image;
+                try{
+                  image=base64Decode(window.split('~')[1]);
+                }catch(e){
+                }
+                windowsIcon.add(image);
+
+                windowsProcessBox.add(
+                    ProcessBox(
+                        window.split('~')[0],
+                        image==null?null:Image.memory(image))
+                );
+              }
+              Home.pcManagerState?.setState(() {
+                Home.pcManagerState?.taskManagerLoading = false;
+              });
+
+              bool todo=Home.pcManagerState?.widget.windowsTitle.isEmpty??true;
+              for(String str in Home.pcManagerState?.widget.windowsTitle??[]){
+                if(!windowsTitle.contains(str)){
+                  todo=true;
+                }
+              }
+              if(!todo){
+                return;
+              }
+
+              Home.pcManagerState?.setState(() {
+                Home.pcManagerState?.widget.windowsTitle=windowsTitle;
+                Home.pcManagerState?.widget.windowsIcon=windowsIcon;
+                Home.pcManagerState?.widget.windows=windowsProcessBox;
               });
             }
           }

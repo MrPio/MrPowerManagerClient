@@ -32,7 +32,7 @@ class MyKeyboardListenerState extends State<MyKeyboardListener> {
   var _listviewController1 = ScrollController();
   var _listviewController2 = ScrollController();
 
-  var base64String;
+  var base64Image;
   var oldImage;
 bool hideBottom=false,isStreaming=false;
 
@@ -57,7 +57,7 @@ bool hideBottom=false,isStreaming=false;
         child: Scaffold(
           body: Stack(
             children: [
-              base64String==null?Container():Center(
+              base64Image==null?Container():Center(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.vertical,
                   physics: const NeverScrollableScrollPhysics(),
@@ -107,7 +107,7 @@ bool hideBottom=false,isStreaming=false;
                           child: Stack(children:
                           [
                             oldImage==null?Container():Image.memory(oldImage),
-                            base64String==null?Container():Image.memory(base64String),
+                            base64Image==null?Container():Image.memory(base64Image),
                           ])),
                     ),
                   ),

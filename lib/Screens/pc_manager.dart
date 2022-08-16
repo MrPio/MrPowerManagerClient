@@ -1,10 +1,10 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_spinbox/flutter_spinbox.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:mr_power_manager_client/Pages/passwords_list.dart';
@@ -13,7 +13,7 @@ import 'package:mr_power_manager_client/Screens/wattage_consumption.dart';
 import 'package:mr_power_manager_client/Screens/webcam_streaming.dart';
 import 'package:mr_power_manager_client/Utils/StoreKeyValue.dart';
 import 'package:mr_power_manager_client/Utils/size_adjustaments.dart';
-import 'package:mr_power_manager_client/Widgets/icon_ink_well.dart';
+import 'package:mr_power_manager_client/Widgets/process_box.dart';
 
 import '../Pages/input_dialog.dart';
 import '../Styles/background_gradient.dart';
@@ -72,7 +72,7 @@ class PcManager extends StatefulWidget {
 
   bool online = false;
   int volume = 0,
-      backupVolume=0,
+      backupVolume = 0,
       brightness = 0,
       battery = 0,
       batteryMinutes = 0,
@@ -95,7 +95,11 @@ class PcManager extends StatefulWidget {
       hotspot = true,
       isLock = false;
   double opacityTop = 1, opacityBottom = 0;
-  DateTime lastStatusEditedByClient=DateTime.fromMicrosecondsSinceEpoch(0);
+  DateTime lastStatusEditedByClient = DateTime.fromMicrosecondsSinceEpoch(0);
+  List<String> windowsTitle = [];
+  List<String> lastWindowsTitle = [];
+  List<Uint8List?> windowsIcon = [];
+  List<ProcessBox> windows=[];
 
   bool wattsActive = false;
   bool cpusActive = false;
@@ -129,9 +133,13 @@ class PcManagerState extends State<PcManager>
 
   var passwordsList = PasswordsList(Colors.lightBlue);
 
-  static bool passwordPaste=false;
+  static bool passwordPaste = false;
 
-  int lastQuality=50;
+  int lastQuality = 50;
+
+  bool calledNavigator = false;
+
+  bool taskManagerLoading = false;
 
   @override
   void didChangeDependencies() {
@@ -155,7 +163,9 @@ class PcManagerState extends State<PcManager>
       var callback = (map) {
         Home.pcManagerState?.setState(() {
           var widget = Home.pcManagerState?.widget ?? this.widget;
-          if((DateTime.now().difference(widget.lastStatusEditedByClient)).inSeconds<=2) {
+          if ((DateTime.now().difference(widget.lastStatusEditedByClient))
+                  .inSeconds <=
+              2) {
             return;
           }
           // widget.pcState = getState(map['state']);
@@ -239,6 +249,7 @@ class PcManagerState extends State<PcManager>
         ),
       ),
       Container(),
+      Container(),
       Icon(
         Icons.key,
         size: adjustSizeVertically(context, 38),
@@ -248,6 +259,7 @@ class PcManagerState extends State<PcManager>
 
     var FABcolors = [
       [Colors.blue[900], Colors.blue, Colors.white],
+      [Colors.red[800], Colors.redAccent[100], Colors.white],
       [Colors.white, Colors.white, Colors.white],
       [Colors.deepOrange[800], Colors.amber[600], Colors.white],
       [Colors.white, Colors.white, Colors.white],
@@ -269,6 +281,7 @@ class PcManagerState extends State<PcManager>
         }
       },
       () {},
+      () {},
       () async {
         var key =
             await PasswordsListState.requestPassword(context, widget.pcName);
@@ -277,7 +290,7 @@ class PcManagerState extends State<PcManager>
           scheduleRefresh();
         }
       },
-          () {},
+      () {},
     ];
 
     FAB = FloatingActionButton(
@@ -290,6 +303,7 @@ class PcManagerState extends State<PcManager>
 
     var screens = [
       controlScreen(),
+      taskManagerScreen(),
       chartsScreen(),
       passwordsScreen(),
       remoteControlScreen(),
@@ -361,8 +375,7 @@ class PcManagerState extends State<PcManager>
                                                 mainAxisAlignment:
                                                     MainAxisAlignment
                                                         .spaceEvenly,
-                                                mainAxisSize:
-                                                    MainAxisSize.max,
+                                                mainAxisSize: MainAxisSize.max,
                                                 children: [
                                                   const SizedBox(
                                                     height: 10,
@@ -373,8 +386,7 @@ class PcManagerState extends State<PcManager>
                                                         widget.online
                                                             ? 'online'
                                                             : '',
-                                                        style:
-                                                            GoogleFonts.lato(
+                                                        style: GoogleFonts.lato(
                                                           fontSize: 20,
                                                           color: Colors.green,
                                                         ),
@@ -387,8 +399,7 @@ class PcManagerState extends State<PcManager>
                                                         children: [
                                                           Icon(
                                                             Icons.circle,
-                                                            color: widget
-                                                                    .online
+                                                            color: widget.online
                                                                 ? Colors.green
                                                                 : Colors.red,
                                                             size: 20,
@@ -405,9 +416,8 @@ class PcManagerState extends State<PcManager>
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .normal),
-                                                            textAlign:
-                                                                TextAlign
-                                                                    .center,
+                                                            textAlign: TextAlign
+                                                                .center,
                                                           ),
                                                           const SizedBox(
                                                             width: 20,
@@ -476,23 +486,19 @@ class PcManagerState extends State<PcManager>
                                                           return;
                                                         }
                                                         setState(() {
-                                                          widget.volume =
-                                                              value;
+                                                          widget.volume = value;
                                                         });
                                                         sendCommand(
                                                             null,
-                                                            Commands
-                                                                .SOUND_VALUE
+                                                            Commands.SOUND_VALUE
                                                                 .name,
                                                             value: value);
                                                       }),
                                                       ElementCircularState(
-                                                          widget.brightness <
-                                                                  50
+                                                          widget.brightness < 50
                                                               ? Icons
                                                                   .wb_sunny_outlined
-                                                              : Icons
-                                                                  .wb_sunny,
+                                                              : Icons.wb_sunny,
                                                           widget.brightness
                                                               .toString(),
                                                           Colors.amber,
@@ -521,7 +527,7 @@ class PcManagerState extends State<PcManager>
                                                             Commands
                                                                 .BRIGHTNESS_VALUE
                                                                 .name,
-                                                            value:value);
+                                                            value: value);
                                                       }),
                                                       ElementCircularState(
                                                           widget.batteryPlugged
@@ -553,8 +559,7 @@ class PcManagerState extends State<PcManager>
                                                         Icons.memory,
                                                         widget.cpuUsage
                                                             .toString(),
-                                                        Colors
-                                                            .deepOrangeAccent,
+                                                        Colors.deepOrangeAccent,
                                                         () async {
                                                           SnackBarGenerator
                                                               .makeSnackBar(
@@ -579,8 +584,7 @@ class PcManagerState extends State<PcManager>
                                                             .toString(),
                                                         widget.gpuTemp > 75
                                                             ? Colors.redAccent
-                                                            : Colors
-                                                                .pinkAccent,
+                                                            : Colors.pinkAccent,
                                                         () async {
                                                           SnackBarGenerator.makeSnackBar(
                                                               context,
@@ -600,14 +604,12 @@ class PcManagerState extends State<PcManager>
                                                         width: 10,
                                                       ),
                                                       ElementCircularState(
-                                                        Icons
-                                                            .workspaces_filled,
+                                                        Icons.workspaces_filled,
                                                         widget.ramUsage
                                                             .toString(),
                                                         Colors.purpleAccent[
                                                                 100] ??
-                                                            Colors
-                                                                .purpleAccent,
+                                                            Colors.purpleAccent,
                                                         () async {
                                                           SnackBarGenerator.makeSnackBar(
                                                               context,
@@ -637,8 +639,7 @@ class PcManagerState extends State<PcManager>
                                                               color: Colors
                                                                           .teal[
                                                                       300] ??
-                                                                  Colors
-                                                                      .teal);
+                                                                  Colors.teal);
                                                         },
                                                         scale: 0.6,
                                                         text: "DISK",
@@ -656,8 +657,7 @@ class PcManagerState extends State<PcManager>
                                 : Opacity(
                                     opacity: widget.opacityBottom,
                                     child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.end,
+                                      mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         Text(
                                           widget.online ? 'online' : '',
@@ -695,8 +695,8 @@ class PcManagerState extends State<PcManager>
                                           ],
                                         ),
                                         SizedBox(
-                                          height: adjustSizeVertically(
-                                              context, 6),
+                                          height:
+                                              adjustSizeVertically(context, 6),
                                         ),
                                         Row(
                                           mainAxisAlignment:
@@ -713,12 +713,11 @@ class PcManagerState extends State<PcManager>
                                               final value =
                                                   await showDialog<int>(
                                                 context: context,
-                                                builder: (context) =>
-                                                    sliderDialog(
-                                                        "Give me the value to send:",
-                                                        widget.volume,
-                                                        20,
-                                                        Icons.volume_up),
+                                                builder: (context) => sliderDialog(
+                                                    "Give me the value to send:",
+                                                    widget.volume,
+                                                    20,
+                                                    Icons.volume_up),
                                               );
                                               if (value == null) {
                                                 return;
@@ -726,10 +725,9 @@ class PcManagerState extends State<PcManager>
                                               setState(() {
                                                 widget.volume = value;
                                               });
-                                              sendCommand(
-                                                  null,
+                                              sendCommand(null,
                                                   Commands.SOUND_VALUE.name,
-                                                  value:value);
+                                                  value: value);
                                             },
                                                 scale: headerBottomScale,
                                                 strict: true),
@@ -760,14 +758,13 @@ class PcManagerState extends State<PcManager>
                                                   null,
                                                   Commands
                                                       .BRIGHTNESS_VALUE.name,
-                                                  value:value);
+                                                  value: value);
                                             },
                                                 scale: headerBottomScale,
                                                 strict: true),
                                             ElementCircularState(
                                               widget.batteryPlugged
-                                                  ? Icons
-                                                      .battery_charging_full
+                                                  ? Icons.battery_charging_full
                                                   : Icons.battery_full,
                                               widget.battery.toString(),
                                               Colors.green,
@@ -793,16 +790,15 @@ class PcManagerState extends State<PcManager>
                                               SnackBarGenerator.makeSnackBar(
                                                   context,
                                                   "the CPU usage is ${widget.cpuUsage}%",
-                                                  color: Colors
-                                                      .deepOrangeAccent);
+                                                  color:
+                                                      Colors.deepOrangeAccent);
                                             },
                                                 scale: headerBottomScale,
                                                 strict: true),
                                             ElementCircularState(
                                                 widget.gpuTemp > 75
                                                     ? Icons.device_thermostat
-                                                    : Icons
-                                                        .bar_chart_outlined,
+                                                    : Icons.bar_chart_outlined,
                                                 widget.gpuUsage.toString(),
                                                 widget.gpuTemp > 75
                                                     ? Colors.redAccent
@@ -826,8 +822,8 @@ class PcManagerState extends State<PcManager>
                                               SnackBarGenerator.makeSnackBar(
                                                   context,
                                                   "the RAM usage is ${widget.ramUsage}%",
-                                                  color: Colors.purpleAccent[
-                                                          100] ??
+                                                  color: Colors
+                                                          .purpleAccent[100] ??
                                                       Colors.purpleAccent);
                                             },
                                                 scale: headerBottomScale,
@@ -835,8 +831,8 @@ class PcManagerState extends State<PcManager>
                                           ],
                                         ),
                                         SizedBox(
-                                          height: adjustSizeVertically(
-                                              context, 6),
+                                          height:
+                                              adjustSizeVertically(context, 6),
                                         )
                                       ],
                                     ),
@@ -853,35 +849,134 @@ class PcManagerState extends State<PcManager>
                         screens[_currentIndex],
                       ],
                     ),
+                    taskManagerLoading&&_currentIndex==1?
+                    Center(
+                      child: Container(
+                        decoration:  BoxDecoration(
+                            borderRadius: const BorderRadius.all(Radius.circular(22)),
+                            color: Colors.black.withOpacity(0.46)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                strokeWidth: 6,
+                                color: Colors.blue,
+                              ),
+                              SizedBox.fromSize(size: const Size(0,16),),
+                              Text('Loading...',style: GoogleFonts.lato(fontSize: 16),)
+                            ],
+                          ),
+                        ),
+                      ),
+                    ):Container(),
                   ],
                 ),
               ),
-              _currentIndex==2?Column(
+              _currentIndex == 3
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          color: Colors.black.withOpacity(0.48),
+                          height: 60,
+                          child: Row(
+                            children: [
+                              const SizedBox(
+                                width: 28,
+                              ),
+                              SizedBox(
+                                child: Transform.scale(
+                                  scale: 1.45,
+                                  child: Switch(
+                                    onChanged: (bool value) {
+                                      setState(() => passwordPaste = value);
+                                    },
+                                    value: passwordPaste,
+                                    activeColor: Colors.amberAccent,
+                                    hoverColor: Colors.white,
+                                    activeTrackColor:
+                                        Colors.amber.withOpacity(0.34),
+                                    inactiveThumbColor: Colors.lightBlue,
+                                    inactiveTrackColor:
+                                        Colors.blue.withOpacity(0.5),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(
+                                width: 16,
+                              ),
+                              Text(passwordPaste ? 'Paste' : 'Copy',
+                                  style: GoogleFonts.lato(
+                                      fontSize: 22,
+                                      color: passwordPaste
+                                          ? Colors.amber.shade100
+                                          : Colors.lightBlue.shade100)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  :
+              _currentIndex==1 && ProcessBox.selected.values.contains(true)?
+              Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
-                    color: Colors.black.withOpacity(0.48),
-                    height: 60,
+                    color: Colors.black.withOpacity(0.7),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        const SizedBox(width: 28,),
-                        SizedBox(
-                          child: Transform.scale(
-                            scale: 1.45,
-                            child: Switch(
-                              onChanged: (bool value) {setState(() =>passwordPaste=value);  },
-                              value: passwordPaste,
-                              activeColor: Colors.amberAccent,
-                              hoverColor: Colors.white,
-                              activeTrackColor: Colors.amber.withOpacity(0.34),
-                              inactiveThumbColor: Colors.lightBlue,
-                              inactiveTrackColor: Colors.blue.withOpacity(0.5),
+                        InkWell(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0,vertical: 8.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.fullscreen,size: 46,color: Colors.lightBlue.shade200,),
+                                SizedBox.fromSize(size: const Size(0,4),),
+                                Text('Bring to front',style: GoogleFonts.lato(fontSize: 18,color:Colors.lightBlue.shade200,fontWeight: FontWeight.w300),)
+                              ],
                             ),
                           ),
+                          splashColor: Colors.lightBlue,
+                          onTap: (){
+                            print(ProcessBox.selected.toString());
+                            for(var title in ProcessBox.selected.keys){
+
+                              if(ProcessBox.selected[title]??false)      {
+                                print('eccomi');
+                                sendCommand(null, 'WINDOW_FOCUS@@@$title',snackbar: false);
+                              }
+                            }
+                          },
                         ),
-                        const SizedBox(width: 16,),
-                        Text(passwordPaste?'Paste':'Copy',
-                            style: GoogleFonts.lato(fontSize: 22, color: passwordPaste?Colors.amber.shade100:Colors.lightBlue.shade100)),
+                        InkWell(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 22.0,vertical: 8.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.close,size: 46,color: Colors.redAccent.shade100,),
+                                SizedBox.fromSize(size: const Size(0,4),),
+                                Text('Terminate',style: GoogleFonts.lato(fontSize: 18,color: Colors.redAccent.shade100,fontWeight: FontWeight.w300),)
+                              ],
+                            ),
+                          ),
+                          splashColor: Colors.redAccent,
+                          onTap: ()async{
+                                  if(! await yesNoDialog(context,'Are you sure you want to close this window?')){
+                                    return;
+                                  }
+                                  for(var title in ProcessBox.selected.keys){
+                                    if(ProcessBox.selected[title]??false)      {
+                                      sendCommand(null, 'WINDOW_KILL@@@$title',snackbar: false);
+                                    }
+                                  }                                                                
+
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -895,7 +990,7 @@ class PcManagerState extends State<PcManager>
         floatingActionButton: SizedBox(
           width: adjustSizeVertically(context, 66),
           height: adjustSizeVertically(context, 66),
-          child: _currentIndex != 1 && _currentIndex!=3 ? FAB : Container(),
+          child: _currentIndex != 1 && _currentIndex != 2 && _currentIndex != 4 ? FAB : Container(),
         ),
         bottomNavigationBar: BottomNavigationBar(
           selectedItemColor: Colors.white,
@@ -908,8 +1003,12 @@ class PcManagerState extends State<PcManager>
           onTap: (_index) {
             setState(() {
               _currentIndex = _index;
-              if (_currentIndex == 1) {
+
+              if (_currentIndex == 2) {
                 scheduleWattageData();
+              }
+              if(_currentIndex==1){
+                taskManagerLoading=true;
               }
               if (_currentIndex != 0) {
                 Future.delayed(const Duration(milliseconds: 740), () {
@@ -941,16 +1040,24 @@ class PcManagerState extends State<PcManager>
             ),
             BottomNavigationBarItem(
               icon: Icon(_currentIndex == 1
+                  ? Icons.list_alt
+                  : Icons.list_alt_outlined),
+              label: "TaskManager",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(_currentIndex == 2
                   ? Icons.bar_chart
                   : Icons.bar_chart_outlined),
               label: "Charts",
             ),
             BottomNavigationBarItem(
-              icon: Icon(_currentIndex == 2 ? Icons.key : Icons.key_outlined),
+              icon: Icon(_currentIndex == 3 ? Icons.key : Icons.key_outlined),
               label: "Passwords",
             ),
             BottomNavigationBarItem(
-              icon: Icon(_currentIndex == 2 ? Icons.settings_remote_outlined : Icons.settings_remote),
+              icon: Icon(_currentIndex == 4
+                  ? Icons.settings_remote_outlined
+                  : Icons.settings_remote),
               label: "Remote control",
             ),
           ],
@@ -985,6 +1092,7 @@ class PcManagerState extends State<PcManager>
     refresh();
     // scheduleRefresh();//TODO
     requestWattageData(false);
+    pollingActiveWindows();
     listviewController.addListener(() {
       var span = adjustSizeVertically(context, 60);
       var offset = listviewController.offset;
@@ -1036,7 +1144,7 @@ class PcManagerState extends State<PcManager>
     LargeCommandShape.pcManager = this;
     PasswordsList.pcManager = this;
 
-    StoreKeyValue.saveData('lastPc',widget.pcName);
+    StoreKeyValue.saveData('lastPc', widget.pcName);
   }
 
   Future<void> refresh() async {
@@ -1252,7 +1360,7 @@ class PcManagerState extends State<PcManager>
    * se il pc è online mando il comando tramite socket, altrimenti lo mando alla api per memorizzarlo
    */
   void sendCommand(DateTime? scheduledDate, String command,
-  {int value = -1,bool snackbar=true}) async {
+      {int value = -1, bool snackbar = true}) async {
     var newToken = keepOnlyAlphaNum(PcManager.token);
     var newPcName = keepOnlyAlphaNum(widget.pcName);
     var formattedDate = '';
@@ -1265,10 +1373,14 @@ class PcManagerState extends State<PcManager>
           destination: "/app/scheduleCommand/$newToken/$newPcName",
           body: '$command~${value.toString()}~$formattedDate');
 
-      if(snackbar) {
-        SnackBarGenerator.makeSnackBar(context, command.contains('RECORD_SECONDS')?
-        'Command sent successfully! Check your desktop to find your recording!':"Command sent successfully!",
-            millis: 500, color: Colors.amber);
+      if (snackbar) {
+        SnackBarGenerator.makeSnackBar(
+            context,
+            command.contains('RECORD_SECONDS')
+                ? 'Command sent successfully! Check your desktop to find your recording!'
+                : "Command sent successfully!",
+            millis: 500,
+            color: Colors.amber);
       }
     } else {
       var args = {
@@ -1286,9 +1398,9 @@ class PcManagerState extends State<PcManager>
       var response =
           await requestData(context, HttpType.post, '/scheduleCommand', args);
       if (response['result'].toString().contains('successfully')) {
-        if(snackbar) {
+        if (snackbar) {
           SnackBarGenerator.makeSnackBar(context, "Command sent successfully!",
-            millis: 800, color: Colors.amber);
+              millis: 800, color: Colors.amber);
         }
       } else {
         SnackBarGenerator.makeSnackBar(context, response['result'].toString(),
@@ -1297,27 +1409,27 @@ class PcManagerState extends State<PcManager>
     }
   }
 
-  sendBase64(String data,String header){
-    Home.stopListenOnMessage=true;
+  sendBase64(String data, String header) {
+    Home.stopListenOnMessage = true;
     setState(() {});
-    var BYTES_LIMIT=14000;
+    var BYTES_LIMIT = 14000;
     var max = data.length ~/ BYTES_LIMIT;
-    var msg='';
-    for(int i=0;i<max+1;i++){
-      if (data.length > BYTES_LIMIT){
-        msg = header+'@@@$i@@@$max@@@' + data.substring(0,BYTES_LIMIT);
-      }
-      else{
-        msg = header+'@@@$i@@@$max@@@' + data;
+    var msg = '';
+    for (int i = 0; i < max + 1; i++) {
+      if (data.length > BYTES_LIMIT) {
+        msg = header + '@@@$i@@@$max@@@' + data.substring(0, BYTES_LIMIT);
+      } else {
+        msg = header + '@@@$i@@@$max@@@' + data;
       }
 
-      if (data.length > BYTES_LIMIT){
-      data = data.substring(BYTES_LIMIT);
+      if (data.length > BYTES_LIMIT) {
+        data = data.substring(BYTES_LIMIT);
       }
       PcManager.myStompClient?.stompClient.send(
-          destination: "/app/sendMessage/${PcManager.token}/${widget.pcName}", body: msg);
+          destination: "/app/sendMessage/${PcManager.token}/${widget.pcName}",
+          body: msg);
 
-      Home.stopListenOnMessage=false;
+      Home.stopListenOnMessage = false;
     }
   }
 
@@ -1425,7 +1537,6 @@ class PcManagerState extends State<PcManager>
                 true,
                 Commands.BRIGHTNESS_UP),
 
-
             CommandShape(
                 widget.pcName,
                 Colors.pinkAccent[100] ?? Colors.pinkAccent,
@@ -1445,6 +1556,46 @@ class PcManagerState extends State<PcManager>
         SizedBox(
           height: adjustSizeVertically(context, 16),
         ),
+      ],
+    );
+  }
+
+  taskManagerScreen() {
+    return Column(
+      children: [
+        getSilverAnimatorBox(),
+        widget.windowsTitle.isEmpty
+            ? SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: MediaQuery.of(context).size.height / 4),
+                  child: Text(
+                    widget.online
+                        ? "Nothing to show for now."
+                        : "Sorry but the pc seems to be offline, cannot collect any data from it.",
+                    style: GoogleFonts.lato(fontSize: 28),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              )
+            : Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: GridView.builder(
+          shrinkWrap: true,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 4,
+                childAspectRatio: 0.9,
+                maxCrossAxisExtent:MediaQuery.of(context).size.width/3-1,
+                ),
+          itemCount: widget.windowsTitle.length,
+          itemBuilder: (BuildContext context, int index) {
+              return widget.windows[index];
+          },
+        ),
+            ),
+        SizedBox.fromSize(size: Size(0,70),)
       ],
     );
   }
@@ -1628,115 +1779,183 @@ class PcManagerState extends State<PcManager>
       children: [
         getSilverAnimatorBox(),
         Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(adjustSizeHorizontally(context, 36.0)),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: GridView.count(
+              crossAxisCount: 2,
+              childAspectRatio: 0.65,
+              shrinkWrap: true,
+              children: [
+                Column(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.screen_share,
+                        color: Colors.yellow.shade200,
+                      ),
+                      onPressed: () {
+                        calledNavigator = true;
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (!calledNavigator) {
+                            return;
+                          }
+                          calledNavigator = false;
+                          Navigator.pushNamed(context, '/keyboardListener');
+                        });
+                      },
+                      splashColor: Colors.black.withOpacity(1),
+                      highlightColor: Colors.black.withOpacity(0.2),
+                      iconSize: 110,
+                    ),
+                    Text(
+                      'Remote control                                keyboard',
+                      style: GoogleFonts.lato(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w300,
+                          color: Colors.yellow.shade300),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.camera_alt,
+                        color: Colors.orange.shade200,
+                      ),
+                      onPressed: () {
+                        calledNavigator = true;
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (!calledNavigator) {
+                            return;
+                          }
+                          calledNavigator = false;
+                          Navigator.pushNamed(context, '/webcamStreaming');
+                        });
+                      },
+                      splashColor: Colors.black.withOpacity(1),
+                      highlightColor: Colors.black.withOpacity(0.2),
+                      iconSize: 110,
+                    ),
+                    Text(
+                      'Remote stream                       webcam',
+                      style: GoogleFonts.lato(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w300,
+                          color: Colors.orange.shade300),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.mic,
+                        color: Colors.deepOrange.shade200,
+                      ),
+                      onPressed: () {
+                        calledNavigator = true;
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (!calledNavigator) {
+                            return;
+                          }
+                          calledNavigator = false;
+                          Navigator.pushNamed(context, '/sendTextVoice');
+                        });
+                      },
+                      splashColor: Colors.black.withOpacity(1),
+                      highlightColor: Colors.black.withOpacity(0.2),
+                      iconSize: 110,
+                    ),
+                    Text(
+                      'Control using your voice',
+                      style: GoogleFonts.lato(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w300,
+                          color: Colors.deepOrange.shade300),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.camera,
+                        color: Colors.redAccent.shade100,
+                      ),
+                      onPressed: () async {
+                        if (!await yesNoDialog(
+                            context,
+                            'Wanna set your pc to record the screen? Please note that this feature required FFmpeg to be installed on your pc;'
+                            'you can follow this guide to do so: https://www.wikihow.com/Install-FFmpeg-on-Windows')) {
+                          return;
+                        }
+                        var fps = await inputDialog(
+                            context,
+                            'The number of frame per second. [1-60]',
+                            '30',
+                            Icons.format_paint_sharp,
+                            numbers: true,
+                            title: 'FPS');
+                        if (fps == '' ||
+                            int.parse(fps) > 60 ||
+                            int.parse(fps) < 1) {
+                          return;
+                        }
+                        int minutes = (await inputMinuteHours(
+                            context,
+                            'Gimme the duration of the recording',
+                            Icons.timer));
+                        if (minutes == 0) {
+                          SnackBarGenerator.makeSnackBar(
+                              context, 'Please give me a value greater than 0!',
+                              color: Colors.red);
+                          return;
+                        } else if (minutes == -1) {
+                          return;
+                        }
+                        var h265 = await yesNoDialog(
+                            context,
+                            'Wanna use the newer codec HEVC(H.265)? You gain'
+                            'better compression paying in higher cpu\'s usage',
+                            confirm: 'H.265',
+                            cancel: 'H.264');
+                        lastQuality = await showDialog<int>(
+                                context: context,
+                                builder: (context) => sliderDialog(
+                                    "Quality",
+                                    lastQuality == -1 ? 50 : lastQuality,
+                                    20,
+                                    Icons.high_quality)) ??
+                            -1;
+                        if (lastQuality == -1) {
+                          return;
+                        }
+                        var quality = 51 - lastQuality * 51 / 100;
 
-                  IconButton(
-                    icon: Icon(Icons.screen_share,color: Colors.yellow.shade200,),
-                    onPressed:    (){
-                      Navigator.pushNamed(context, '/keyboardListener');
-                    },
-                    splashColor: Colors.black.withOpacity(1),
-                    highlightColor: Colors.black.withOpacity(0.2),
-                    iconSize: 110,
-                  ),
-                  Text(
-                    'Remote control                                keyboard',
-                    style: GoogleFonts.lato(fontSize: 32,fontWeight: FontWeight.w300,
-                        color:Colors.yellow.shade300 ),
-                    textAlign: TextAlign.center,
-                  ),
+                        var command =
+                            'RECORD_SECONDS@@@$fps@@@${minutes * 60}@@@$quality@@@$h265';
 
-                  const SizedBox(height: 50 ),
-                  IconButton(
-                    icon: Icon(Icons.camera_alt,color: Colors.orange.shade200,),
-                    onPressed:    (){
-                      Navigator.pushNamed(context, '/webcamStreaming');
-
-                    },
-                    splashColor: Colors.black.withOpacity(1),
-                    highlightColor: Colors.black.withOpacity(0.2),
-                    iconSize: 110,
-                  ),
-                  Text(
-                    'Remote stream                       webcam',
-                    style: GoogleFonts.lato(fontSize: 32,fontWeight: FontWeight.w300,
-                        color:Colors.orange.shade300 ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 50 ),
-                  IconButton(
-                    icon: Icon(Icons.mic,color: Colors.red.shade200,),
-                    onPressed:    (){
-                      Navigator.pushNamed(context, '/sendTextVoice');
-
-                    },
-                    splashColor: Colors.black.withOpacity(1),
-                    highlightColor: Colors.black.withOpacity(0.2),
-                    iconSize: 110,
-                  ),
-                  Text(
-                    'Use your voice',
-                    style: GoogleFonts.lato(fontSize: 32,fontWeight: FontWeight.w300,
-                        color:Colors.red.shade300 ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 50 ),
-                  IconButton(
-                    icon: Icon(Icons.camera,color: Colors.red.shade200,),
-                    onPressed:    ()async{
-                      if(! await yesNoDialog(context, 'Wanna set your pc to record the screen? Please note that this feature required FFmpeg to be installed on your pc;'
-                          'you can follow this guide to do so: https://www.wikihow.com/Install-FFmpeg-on-Windows')){
-                        return;
-                      }
-                      var fps=await inputDialog(context, 'The number of frame per second. [1-60]'
-                          , '30', Icons.format_paint_sharp,numbers: true,title: 'FPS');
-                      if(fps=='' || int.parse(fps)>60||int.parse(fps)<1) {
-                        return;
-                      }
-                      int minutes=(await inputMinuteHours(context, 'Gimme the duration of the recording', Icons.timer));
-                      if(minutes==0){
-                        SnackBarGenerator.makeSnackBar(context, 'Please give me a value greater than 0!',color: Colors.red);
-                        return;
-                      }
-                      else if(minutes==-1){
-                        return;
-                      }
-                      var h265=await yesNoDialog(context, 'Wanna use the newer codec HEVC(H.265)? You gain'
-                          'better compression paying in higher cpu\'s usage',confirm: 'H.265',cancel: 'H.264');
-                      lastQuality = await showDialog<int>(
-                          context: context,
-                          builder: (context) => sliderDialog("Quality",lastQuality==-1?50:lastQuality,20,Icons.high_quality))??-1;
-                      if(lastQuality==-1){
-                        return;
-                      }
-                      var quality=51-lastQuality*51/100;
-
-                      var command='RECORD_SECONDS@@@$fps@@@${minutes * 60}@@@$quality@@@$h265';
-
-
-                      sendCommand(null, command);
-                    },
-                    splashColor: Colors.black.withOpacity(1),
-                    highlightColor: Colors.black.withOpacity(0.2),
-                    iconSize: 110,
-                  ),
-                  Text(
-                    'Schedule record                       screen',
-                    style: GoogleFonts.lato(fontSize: 32,fontWeight: FontWeight.w300,
-                        color:Colors.red.shade300 ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 60 ),
-                ],
-              ),
+                        sendCommand(null, command);
+                      },
+                      splashColor: Colors.black.withOpacity(1),
+                      highlightColor: Colors.black.withOpacity(0.2),
+                      iconSize: 110,
+                    ),
+                    Text(
+                      'Schedule record                       screen',
+                      style: GoogleFonts.lato(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w300,
+                          color: Colors.redAccent.shade200),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                )
+              ],
             ),
           ),
         ),
@@ -1789,5 +2008,14 @@ class PcManagerState extends State<PcManager>
             color: Colors.red);
       }
     }
+  }
+
+  void pollingActiveWindows() async {
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (_currentIndex==1) {
+        sendCommand(null, 'TASK_MANAGER', snackbar: false);
+      }
+      pollingActiveWindows();
+    });
   }
 }
