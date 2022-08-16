@@ -356,7 +356,7 @@ class HomeState extends State<Home> {
               Home.pcManagerState?.webcamStreaming?.setState(() {
                 Home.pcManagerState?.webcamStreaming?.frame = image;
                 var lap=Home.pcManagerState?.webcamStreaming?.lastSpeed??50;
-                Future.delayed(Duration(milliseconds: 230-lap*2),(){
+                Future.delayed(Duration(milliseconds: 130-lap),(){
                   Home.pcManagerState?.webcamStreaming?.oldImage =
                       image;
                 });

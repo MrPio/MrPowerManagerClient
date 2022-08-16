@@ -847,6 +847,7 @@ class PcManagerState extends State<PcManager>
                       controller: listviewController2,
                       children: [
                         screens[_currentIndex],
+                        SizedBox.fromSize(size:const Size(0,50)),
                       ],
                     ),
                     taskManagerLoading&&_currentIndex==1?
@@ -1595,6 +1596,7 @@ class PcManagerState extends State<PcManager>
           },
         ),
             ),
+
         SizedBox.fromSize(size: Size(0,70),)
       ],
     );
