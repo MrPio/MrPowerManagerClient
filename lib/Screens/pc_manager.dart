@@ -72,6 +72,7 @@ class PcManager extends StatefulWidget {
 
   bool online = false;
   int volume = 0,
+      backupVolume=0,
       brightness = 0,
       battery = 0,
       batteryMinutes = 0,
@@ -94,6 +95,7 @@ class PcManager extends StatefulWidget {
       hotspot = true,
       isLock = false;
   double opacityTop = 1, opacityBottom = 0;
+  DateTime lastStatusEditedByClient=DateTime.fromMicrosecondsSinceEpoch(0);
 
   bool wattsActive = false;
   bool cpusActive = false;
@@ -153,6 +155,9 @@ class PcManagerState extends State<PcManager>
       var callback = (map) {
         Home.pcManagerState?.setState(() {
           var widget = Home.pcManagerState?.widget ?? this.widget;
+          if((DateTime.now().difference(widget.lastStatusEditedByClient)).inSeconds<=2) {
+            return;
+          }
           // widget.pcState = getState(map['state']);
           widget.battery = (map['batteryPerc'] as int);
           widget.volume = (map['sound'] as int);
@@ -888,8 +893,8 @@ class PcManagerState extends State<PcManager>
         backgroundColor: Colors.transparent,
         resizeToAvoidBottomInset: false,
         floatingActionButton: SizedBox(
-          width: adjustSizeVertically(context, 74),
-          height: adjustSizeVertically(context, 74),
+          width: adjustSizeVertically(context, 66),
+          height: adjustSizeVertically(context, 66),
           child: _currentIndex != 1 && _currentIndex!=3 ? FAB : Container(),
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -974,8 +979,8 @@ class PcManagerState extends State<PcManager>
       widget.headerColor = [
         // Colors.blue[500] ?? Colors.blue,
         Colors.grey[900] ?? Colors.grey,
-        Colors.grey[700] ?? Colors.grey,
-      ][math.Random.secure().nextInt(2)];
+        // Colors.black.withOpacity(0.95),
+      ][math.Random.secure().nextInt(1)];
     });
     refresh();
     // scheduleRefresh();//TODO
@@ -1313,7 +1318,6 @@ class PcManagerState extends State<PcManager>
           destination: "/app/sendMessage/${PcManager.token}/${widget.pcName}", body: msg);
 
       Home.stopListenOnMessage=false;
-
     }
   }
 

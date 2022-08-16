@@ -12,6 +12,8 @@ import 'dart:io'as Io;
 import 'dart:io';
 import 'dart:async';
 import 'package:path_provider/path_provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+
 
 import 'Home.dart';
 
@@ -35,6 +37,8 @@ class _SendTextVoiceState extends State<SendTextVoice>
   var _current_index = 0;
 
   String recordFilePath='';
+
+  stt.SpeechToText speech= stt.SpeechToText();
 
   @override
   Widget build(BuildContext context) {
@@ -111,9 +115,21 @@ class _SendTextVoiceState extends State<SendTextVoice>
                                   return;
                                 }
                                 _mic_on = true;
+                                if(_current_index==0){
+                                  speech.listen( onResult: (result) {
+                                    speech_to_text=result.recognizedWords;
+                                    if(speech_to_text.length!=last_speech_to_text){
+                                      Home.pcManagerState?.sendCommand(null, 'SPEECH_TO_TEXT@@@'+speech_to_text.substring(last_speech_to_text),snackbar: false);
+                                    }
+                                    last_speech_to_text=speech_to_text.length;
+                                  });
+                                }
+                                else{
                                 startRecord();
+                                }
+
                                 if ((await Vibration.hasVibrator()) ?? false) {
-                                  Vibration.vibrate();
+                                  Vibration.vibrate(duration: 200);
                                 }
                               });
                             },
@@ -127,12 +143,18 @@ class _SendTextVoiceState extends State<SendTextVoice>
                                 _animationController.reverse();
                               });
 
-                              stopRecord();
+                              if(_current_index==0){
+                                speech.stop();
+                                speech_to_text='';
+                                last_speech_to_text=0;
+                              }
+                              else{
+                                stopRecord();
                               List<int> recBytes = Io.File(await getFilePath()).readAsBytesSync();
                               String base64Rec = base64Encode(recBytes);
-                              //TODO MANDARE QUESTO
                               Home.pcManagerState?.sendBase64(base64Rec,
                                   _current_index==0?'SPEAK_TO_WRITE':'PLAY_AUDIO');
+                              }
 
 
                             },
@@ -272,15 +294,6 @@ class _SendTextVoiceState extends State<SendTextVoice>
   }
 
 
-/*  Future<bool> checkPermission() async {
-    if (!await Permission.microphone.isGranted) {
-      PermissionStatus status = await Permission.microphone.request();
-      if (status != PermissionStatus.granted) {
-        return false;
-      }
-    }
-    return true;
-  }*/
 
   void startRecord() async {
     await Permission.microphone.request();
@@ -341,7 +354,8 @@ class _SendTextVoiceState extends State<SendTextVoice>
     }
     return sdPath + "/rec.mp3";
   }
-
+String speech_to_text='';
+  int last_speech_to_text=0;
   @override
   void initState() {
     super.initState();
@@ -362,5 +376,7 @@ class _SendTextVoiceState extends State<SendTextVoice>
     _animationControllerSlide.addListener(() => setState(() => {}));
     _curvedAnimationSlide = CurvedAnimation(
         parent: _animationControllerSlide, curve: Curves.fastOutSlowIn);
+
+    speech.initialize(onStatus: (status) {},);
   }
 }

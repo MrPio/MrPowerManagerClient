@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -279,17 +281,10 @@ class HomeState extends State<Home> {
   @override
   void dispose() {
     super.dispose();
+    print('HOME DISPOSING!!!!!!!!!!!!');
     widget.myStompClient.stompClient.deactivate();
   }
 
-  poolingImOnline() async {
-    Future.delayed(const Duration(seconds: 30), () {
-      requestData(context, HttpType.get, '/login',
-          {'token': Home.token, 'imTheClient': 'true'});
-      print('Im online sent!');
-      poolingImOnline();
-    });
-  }
 
   @override
   void initState() {
@@ -306,6 +301,7 @@ class HomeState extends State<Home> {
 
       //===Here's the best part!==================================================
       widget.myStompClient = MyStompClient(Home.token, onConnect: (stompFrame) {
+        sendOnline();
         print('connetto il socket!...');
         widget.myStompClient.subscribeOnline(stompFrame, (map) {
           bool state = map['online'].toString().toLowerCase() == 'true';
@@ -332,7 +328,13 @@ class HomeState extends State<Home> {
           }
           message+=map['message'].split('@@@')[3];
           if(index==max) {
-            var image=base64Decode(message);
+            Uint8List image;
+            try{
+            image=base64Decode(message);
+            }catch(e){
+              return;
+            }
+
             if (map['message'].split('@@@')[0] == "STREAMING") {
               Home.pcManagerState?.myKeyboardListener?.setState(() {
                 Home.pcManagerState?.myKeyboardListener?.base64String =
@@ -346,10 +348,9 @@ class HomeState extends State<Home> {
 
             else if (map['message'].split('@@@')[0] == "WEBCAM") {
               Home.pcManagerState?.webcamStreaming?.setState(() {
-                Home.pcManagerState?.webcamStreaming?.base64String =
-                    image;
+                Home.pcManagerState?.webcamStreaming?.frame = image;
                 var lap=Home.pcManagerState?.webcamStreaming?.lastSpeed??50;
-                Future.delayed(Duration(milliseconds: 130-lap),(){
+                Future.delayed(Duration(milliseconds: 230-lap*2),(){
                   Home.pcManagerState?.webcamStreaming?.oldImage =
                       image;
                 });
@@ -436,5 +437,23 @@ class HomeState extends State<Home> {
     } else {
       SnackBarGenerator.makeSnackBar(context, 'Failed to contact the server');
     }
+  }
+
+  poolingImOnline() async {
+    Future.delayed(const Duration(seconds: 16), () {
+      sendOnline();
+/*
+      requestData(context, HttpType.get, '/login',
+          {'token': Home.token, 'imTheClient': 'true'});
+*/
+      print('Im online sent!');
+      poolingImOnline();
+    });
+  }
+
+
+  sendOnline(){
+      widget.myStompClient.stompClient.send(
+          destination: "/app/setOnline/${PcManager.token}", body: 'true');
   }
 }

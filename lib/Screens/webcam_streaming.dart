@@ -12,21 +12,27 @@ class WebcamStreaming extends StatefulWidget {
 }
 
 class WebcamStreamingState extends State<WebcamStreaming> {
-  var base64String;
+  var frame;
   var oldImage;
 
   bool isStreaming = true;
 
-  int lastSpeed=50;
+  int lastSpeed = 50;
 
-  var lastQuality=50;
+  var lastQuality = 50;
 
   @override
   Widget build(BuildContext context) {
+    var image;
+    try {
+      image = frame == null ? Container() : Image.memory(frame);
+    } catch (e) {
+      image = Container();
+    }
     return Scaffold(
         body: Stack(
       children: [
-        base64String == null
+        frame == null
             ? Container()
             : Center(
                 child: SingleChildScrollView(
@@ -48,40 +54,62 @@ class WebcamStreamingState extends State<WebcamStreaming> {
                           oldImage == null
                               ? Container()
                               : Image.memory(oldImage),
-                          base64String == null
-                              ? Container()
-                              : Image.memory(base64String),
+                          image =
+                              frame == null ? Container() : Image.memory(frame),
                         ])),
                   ),
                 ),
               ),
-
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Padding(
               padding: const EdgeInsets.all(20.0),
-              child: IconButton(onPressed: ()async{
-                lastSpeed = await showDialog<int>(
-                    context: context,
-                    builder: (context) => sliderDialog("Speed",lastSpeed==-1?50:lastSpeed,5,Icons.speed))??-1;
-                if(lastSpeed==-1) {
-                  return;
-                }
-                Home.pcManagerState?.sendCommand(null, 'WEBCAM_SPEED@@@$lastSpeed',snackbar: false);
-              }, icon: const Icon(Icons.speed,size: 38,)),
+              child: IconButton(
+                  onPressed: () async {
+                    lastSpeed = await showDialog<int>(
+                            context: context,
+                            builder: (context) => sliderDialog(
+                                "Speed",
+                                lastSpeed == -1 ? 50 : lastSpeed,
+                                10,
+                                Icons.speed)) ??
+                        -1;
+                    if (lastSpeed == -1) {
+                      return;
+                    }
+                    Home.pcManagerState?.sendCommand(
+                        null, 'WEBCAM_SPEED@@@$lastSpeed',
+                        snackbar: false);
+                  },
+                  icon: const Icon(
+                    Icons.speed,
+                    size: 38,
+                  )),
             ),
             Padding(
               padding: const EdgeInsets.all(20.0),
-              child: IconButton(onPressed: ()async{
-                lastQuality = await showDialog<int>(
-                    context: context,
-                    builder: (context) => sliderDialog("Quality",lastQuality==-1?50:lastQuality,10,Icons.high_quality))??-1;
-                if(lastQuality==-1) {
-                  return;
-                }
-                Home.pcManagerState?.sendCommand(null, 'WEBCAM_QUALITY@@@$lastQuality',snackbar: false);
-              }, icon: const Icon(Icons.high_quality,size: 38,)),
+              child: IconButton(
+                  onPressed: () async {
+                    lastQuality = await showDialog<int>(
+                            context: context,
+                            builder: (context) => sliderDialog(
+                                "Quality",
+                                lastQuality == -1 ? 50 : lastQuality,
+                                10,
+                                Icons.high_quality)) ??
+                        -1;
+                    if (lastQuality == -1) {
+                      return;
+                    }
+                    Home.pcManagerState?.sendCommand(
+                        null, 'WEBCAM_QUALITY@@@$lastQuality',
+                        snackbar: false);
+                  },
+                  icon: const Icon(
+                    Icons.high_quality,
+                    size: 38,
+                  )),
             )
           ],
         )
@@ -108,9 +136,8 @@ class WebcamStreamingState extends State<WebcamStreaming> {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
+    super.dispose();
   }
-
-
 
   sendStreamingStart() async {
     Home.pcManagerState?.sendCommand(null, 'WEBCAM_START', snackbar: false);

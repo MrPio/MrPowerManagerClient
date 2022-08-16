@@ -1,20 +1,16 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:mr_power_manager_client/Pages/input_dialog.dart';
-import 'package:mr_power_manager_client/Styles/password_type.dart';
 import 'package:mr_power_manager_client/Utils/SnackbarGenerator.dart';
-import 'package:mr_power_manager_client/Utils/StoreKeyValue.dart';
-import 'package:mr_power_manager_client/Utils/api_request.dart';
 import 'package:mr_power_manager_client/Utils/size_adjustaments.dart';
-import 'package:mr_power_manager_client/Utils/small_utils.dart';
 
 import '../Screens/Home.dart';
 import '../Screens/pc_manager.dart';
 import '../Styles/commands.dart';
-import '../Utils/encrypt_password.dart';
 
 class CommandShape extends StatefulWidget {
   CommandShape(
@@ -31,7 +27,6 @@ class CommandShape extends StatefulWidget {
   double scale = 1;
 
   Commands command = Commands.LOCK;
-
 
   @override
   State<CommandShape> createState() => _CommandShapeState();
@@ -170,34 +165,75 @@ class _CommandShapeState extends State<CommandShape> {
         'title': "WINDOWS",
         'key': await StoreKeyValue.readStringData('key-$pcName')
       });
-    } else*/ if (widget.command == Commands.HOTSPOT_ON ||
+    } else*/
+    if (widget.command == Commands.HOTSPOT_ON ||
         widget.command == Commands.HOTSPOT_OFF ||
         widget.command == Commands.BLUETOOTH_OFF ||
         widget.command == Commands.BLUETOOTH_ON ||
         widget.command == Commands.RED_LIGHT_ON ||
-        widget.command == Commands.RED_LIGHT_OFF||
+        widget.command == Commands.RED_LIGHT_OFF ||
         widget.command == Commands.SCREENSHOT) {
       SnackBarGenerator.makeSnackBar(context,
           "Sorry but this feature isn't yet implemented... Look for it!");
       return;
     }
 
-    if(widget.command==Commands.WATTAGE){
-      SnackBarGenerator.makeSnackBar(context, "The estimation of today watt-hour is: ${PcManager.wattageValues24h.todayWattHour}Wh",color: Colors.amber);
+    if(widget.command==Commands.SHUTDOWN &&
+    !await yesNoDialog(context, 'Are you REALLY sure you want to shut down your pc? You may lose unsaved data!')) {
       return;
     }
-if(widget.command==Commands.SHARE_CLIPBOARD){
-  ClipboardData? data = await Clipboard.getData('text/plain');
-  var dataStr=data?.text;
-  Home.pcManagerState?.sendCommand( scheduledDate, widget.command.name+"@@@@@@@@@@@@$dataStr",value:value);
-}
-else if(widget.command==Commands.KEYBOARD){
-  SnackBarGenerator.makeSnackBar(context, 'Please use the Remote control screen to gain full remote access to your pc!',color: Colors.lightBlue.shade300);
-}
-else{
 
-    Home.pcManagerState?.sendCommand( scheduledDate, widget.command.name,value:value);
-}
+
+    var pcManagerWidget = Home.pcManagerState?.widget;
+
+    Home.pcManagerState?.setState(() {
+      pcManagerWidget?.lastStatusEditedByClient=DateTime.now();
+      switch (widget.command) {
+        case Commands.SOUND_UP:
+          Home.pcManagerState?.widget.volume =
+              min(100, (pcManagerWidget?.volume ?? 0) + 2);
+          break;
+        case Commands.SOUND_DOWN:
+          Home.pcManagerState?.widget.volume =
+              max(0, (pcManagerWidget?.volume ?? 0) - 2);
+          break;
+
+        case Commands.BRIGHTNESS_UP:
+          Home.pcManagerState?.widget.brightness =
+              min(100, (pcManagerWidget?.brightness ?? 0) + 10);
+          break;
+        case Commands.BRIGHTNESS_DOWN:
+          Home.pcManagerState?.widget.brightness =
+              max(0, (pcManagerWidget?.brightness ?? 0) - 10);
+          break;
+/*        case Commands.NO_SOUND:
+          var c = pcManagerWidget?.backupVolume;
+          pcManagerWidget?.backupVolume = pcManagerWidget.volume;
+          pcManagerWidget?.volume = c ?? 0;
+          break;*/
+      }
+    });
+
+    if (widget.command == Commands.WATTAGE) {
+      SnackBarGenerator.makeSnackBar(context,
+          "The estimation of today watt-hour is: ${PcManager.wattageValues24h.todayWattHour}Wh",
+          color: Colors.amber);
+      return;
+    }
+    if (widget.command == Commands.SHARE_CLIPBOARD) {
+      ClipboardData? data = await Clipboard.getData('text/plain');
+      var dataStr = data?.text;
+      Home.pcManagerState?.sendCommand(
+          scheduledDate, widget.command.name + "@@@@@@@@@@@@$dataStr",
+          value: value);
+    } else if (widget.command == Commands.KEYBOARD) {
+      SnackBarGenerator.makeSnackBar(context,
+          'Please use the Remote control screen to gain full remote access to your pc!',
+          color: Colors.lightBlue.shade300);
+    } else {
+      Home.pcManagerState
+          ?.sendCommand(scheduledDate, widget.command.name, value: value);
+    }
   }
 
   void requestValueIfNeededAndSendCommand(dynamic date) {

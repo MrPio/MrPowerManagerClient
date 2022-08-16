@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/src/gestures/long_press.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mr_power_manager_client/Pages/input_dialog.dart';
 import 'package:mr_power_manager_client/Screens/Home.dart';
@@ -34,6 +35,13 @@ class MyKeyboardListenerState extends State<MyKeyboardListener> {
   var base64String;
   var oldImage;
 bool hideBottom=false,isStreaming=false;
+
+  TransformationController _transformationController =
+  TransformationController();
+
+  LongPressDownDetails? _longPressDetails;
+
+  TapDownDetails? _doublePressDetails;
   @override
   Widget build(BuildContext context) {
     _iconSize=adjustSizeVertically(context, 42);
@@ -53,23 +61,55 @@ bool hideBottom=false,isStreaming=false;
                 child: SingleChildScrollView(
                   scrollDirection: Axis.vertical,
                   physics: const NeverScrollableScrollPhysics(),
-                  child: InteractiveViewer(
-                    panEnabled: true, // Set it to false
-                    boundaryMargin: EdgeInsets.all(0),
-                    minScale: 1,
-
-                    maxScale: 2,
-                    onInteractionStart: (details) {
-                        // hideHand=true;
+                  child: GestureDetector(
+                    onTapUp: (details) {
+                      print('tappp!!');
+                       double correctScaleValue = _transformationController.value.getMaxScaleOnAxis();
+                       var x=details.localPosition.dx/correctScaleValue-_transformationController.value.getTranslation().x/2;
+                       var y=details.localPosition.dy/correctScaleValue-_transformationController.value.getTranslation().y/2;
+                       var new_x=(x/MediaQuery.of(context).size.width);
+                       var new_y=(y/MediaQuery.of(context).size.height);
+                       Home.pcManagerState?.sendCommand(null, "LEFT_CLICK@@@$new_x@@@$new_y",snackbar: false);
                     },
-                    child:  GestureDetector(
-                        onDoubleTap: () {
-                        },
-                        child: Stack(children:
-                        [
-                          oldImage==null?Container():Image.memory(oldImage),
-                          base64String==null?Container():Image.memory(base64String),
-                        ])),
+                    onLongPressDown: (details) {
+                      _longPressDetails=details;
+                    },
+                    onLongPress: (){
+                      double correctScaleValue = _transformationController.value.getMaxScaleOnAxis();
+                      var x=(_longPressDetails?.localPosition.dx??0)/correctScaleValue-_transformationController.value.getTranslation().x/2;
+                      var y=(_longPressDetails?.localPosition.dy??0)/correctScaleValue-_transformationController.value.getTranslation().y/2;
+                      var new_x=(x/MediaQuery.of(context).size.width);
+                      var new_y=(y/MediaQuery.of(context).size.height);
+                      Home.pcManagerState?.sendCommand(null, "RIGHT_CLICK@@@$new_x@@@$new_y",snackbar: false);
+
+                    },
+/*                    onDoubleTapDown: (details) {
+                      _doublePressDetails=details;
+                    },
+                    onDoubleTap: (){
+                      print('double!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+                      double correctScaleValue = _transformationController.value.getMaxScaleOnAxis();
+                      var x=(_doublePressDetails?.localPosition.dx??0)/correctScaleValue-_transformationController.value.getTranslation().x/2;
+                      var y=(_doublePressDetails?.localPosition.dy??0)/correctScaleValue-_transformationController.value.getTranslation().y/2;
+                      var new_x=(x/MediaQuery.of(context).size.width);
+                      var new_y=(y/MediaQuery.of(context).size.height);
+                      Home.pcManagerState?.sendCommand(null, "DOUBLE_CLICK@@@$new_x@@@$new_y",snackbar: false);
+                    },*/
+                    child: InteractiveViewer(
+                      panEnabled: true, // Set it to false
+                      boundaryMargin: EdgeInsets.all(0),
+                      minScale: 1,
+                      maxScale: 2,
+                      transformationController: _transformationController,
+                      child:  GestureDetector(
+                          onDoubleTap: () {
+                          },
+                          child: Stack(children:
+                          [
+                            oldImage==null?Container():Image.memory(oldImage),
+                            base64String==null?Container():Image.memory(base64String),
+                          ])),
+                    ),
                   ),
                 ),
               ),
@@ -310,7 +350,7 @@ bool hideBottom=false,isStreaming=false;
                   ),
                 ],
               )),
-              Padding(
+              hideBottom?Container():Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12.0,vertical: 22.0),
                 child: IconButton(onPressed: ()async{
                   Home.pcManagerState?.sendCommand(null, 'STREAMING_STOP',snackbar: false);
@@ -318,7 +358,7 @@ bool hideBottom=false,isStreaming=false;
                   Navigator.pop(context);
                 }, icon: const Icon(Icons.arrow_back,size: 32,)),
               ),
-              !isStreaming?Container():Row(
+              (!isStreaming||hideBottom)?Container():Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Padding(
@@ -455,16 +495,21 @@ bool hideBottom=false,isStreaming=false;
       }
       lastText = _controller.text;
     });
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [
+      SystemUiOverlay.bottom
+    ]);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
-      DeviceOrientation.portraitUp
+      // DeviceOrientation.portraitUp
     ]);
   }
 
   @override
   void dispose() {
+    super.dispose();
     _controller.dispose();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);

@@ -53,6 +53,7 @@ dependencies:
   vibration: ^1.7.5
   record_mp3: ^3.0.0
   permission_handler: ^9.2.0
+  speech_to_text: ^5.6.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
