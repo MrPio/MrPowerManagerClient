@@ -8,16 +8,17 @@ import 'package:mr_power_manager_client/Screens/pc_manager.dart';
 import 'package:mr_power_manager_client/Styles/commands.dart';
 import 'package:mr_power_manager_client/Utils/SnackbarGenerator.dart';
 import 'package:mr_power_manager_client/Utils/StoreKeyValue.dart';
+import 'package:palette_generator/palette_generator.dart';
 
 import '../Styles/pc_states.dart';
 import '../Utils/api_request.dart';
 import '../Utils/encrypt_password.dart';
 import '../Utils/size_adjustaments.dart';
+import 'package:favicon/favicon.dart' as favi;
 
 class PasswordsList extends StatefulWidget {
-  PasswordsList(this.baseColor, {Key? key}) : super(key: key);
+  PasswordsList( {Key? key}) : super(key: key);
 
-  final baseColor;
   static PcManagerState? pcManager;
   final keys = [];
 
@@ -28,19 +29,25 @@ class PasswordsList extends StatefulWidget {
 class PasswordsListState extends State<PasswordsList> {
   final Map<int, bool> hovers = {};
   final Map<String, bool> filters = {};
+  final baseColor=Colors.lightBlue;
+  var loginColor=Colors.grey.shade700;
+  Map<String,String> faviconUrls = {};
+  Map<String,Color> dominantColors={};
 
   @override
   Widget build(BuildContext context) {
-    var passwords = PasswordsList.pcManager?.widget.passwords ?? [];
+    var passwordsAndLogins = PasswordsList.pcManager?.widget.passwordsAndLogins ?? [];
+    var logins = PasswordsList.pcManager?.widget.logins ?? [];
     PasswordsList.pcManager?.passwordsListState = this;
 
-    return passwords.isEmpty?
+
+    return passwordsAndLogins.isEmpty?
     SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 12,vertical: MediaQuery.of(context).size.height/4),
         child: Text(
           "You haven't stored any password yet! Please use the button below to add one.",
-          style: GoogleFonts.lato(fontSize: 28),textAlign: TextAlign.center,
+          style: GoogleFonts.lato(fontSize: adjustSizeHorizontally(context, 28)),textAlign: TextAlign.center,
         ),
       ),
     )
@@ -49,12 +56,20 @@ class PasswordsListState extends State<PasswordsList> {
         GridView.builder(
           controller: PasswordsList.pcManager?.listviewController2,
           shrinkWrap: true,
-          itemCount: passwords.length,
+          itemCount: passwordsAndLogins.length,
           itemBuilder: (context, index) {
-            if (filters[passwords[index]] ?? false) return Container();
-            var newColor = widget.keys.contains(passwords[index])
-                ? widget.baseColor
+            if (filters[passwordsAndLogins[index]] ?? false) return Container();
+
+            var isLogin=logins.contains(passwordsAndLogins[index]);
+
+            var loginColor=dominantColors[passwordsAndLogins[index]]?.withOpacity(0.33)??Colors.grey.shade800;
+
+            var newColor = widget.keys.contains(passwordsAndLogins[index])
+                ? (isLogin?loginColor:baseColor)
                 : Colors.deepOrange;
+
+            var faviUrl=faviconUrls[passwordsAndLogins[index]]??'';
+
 
             return Padding(
               padding: EdgeInsets.symmetric(
@@ -87,7 +102,7 @@ class PasswordsListState extends State<PasswordsList> {
                     return;
                   }
 
-                  if (!widget.keys.contains(passwords[index])) {
+                  if (!widget.keys.contains(passwordsAndLogins[index])) {
                     await okDialog(
                         context,
                         "Sorry, but this smartphone doesn't"
@@ -99,13 +114,13 @@ class PasswordsListState extends State<PasswordsList> {
                   var keys = await StoreKeyValue.readStringListData(
                       'key-${PasswordsList.pcManager?.widget.pcName}');
                   for (var line in keys!) {
-                    if (passwords[index] == line.split('@')[0]) {
+                    if (passwordsAndLogins[index] == line.split('@')[0]) {
                       key = line.split('@')[1];
                       break;
                     }
                   }
                   var com=PcManagerState.passwordPaste?"PASTE":"COPY";
-                  PasswordsList.pcManager?.sendCommand(null, '${com}_PASSWORD_@@@@@@@@@@@@${passwords[index]}@@@@@@@@@@@@$key');
+                  PasswordsList.pcManager?.sendCommand(null, '${com}_PASSWORD_@@@@@@@@@@@@${passwordsAndLogins[index]}@@@@@@@@@@@@$key');
 
 /*              var response=await requestData(context, HttpType.post, '/sendKey', {
                     'token': PcManager.token,
@@ -124,15 +139,17 @@ class PasswordsListState extends State<PasswordsList> {
                 },
                 onLongPress: () async {
                   if (!await yesNoDialog(context,
-                      'You sure you want to delete the password [${passwords[index]}]?')) {
+                      isLogin?'You sure you want to delete the login [${passwordsAndLogins[index]}]?':
+                      'You sure you want to delete the password [${passwordsAndLogins[index]}]?')) {
                     return;
                   }
 
                   setState(() {
-                    filters[passwords[index]] = true;
+                    filters[passwordsAndLogins[index]] = true;
                   });
                   SnackBarGenerator.makeSnackBar(context,
-                      '[${passwords[index]}] password removed from the list',
+                      isLogin?'[${passwordsAndLogins[index]}] login removed from the list':
+                      '[${passwordsAndLogins[index]}] password removed from the list',
                       color: Colors.grey[900] ?? Colors.black,
                       actionColor: Colors.lightBlue,
                       textColor: Colors.white, onActionIgnored: () async {
@@ -141,20 +158,27 @@ class PasswordsListState extends State<PasswordsList> {
                         context, HttpType.delete, "/deletePassword", {
                       'token': PcManager.token,
                       'pcName': PasswordsList.pcManager?.widget.pcName ?? '',
-                      'title': passwords[index],
+                      'title': passwordsAndLogins[index],
                     });
                     var keys = await StoreKeyValue.readStringListData(
                         'key-${PasswordsList.pcManager?.widget.pcName}');
-                    keys?.removeWhere((element) => element.contains(passwords[index]));
+                    keys?.removeWhere((element) => element.contains(passwordsAndLogins[index]));
                     await StoreKeyValue.saveData('key-${PasswordsList.pcManager?.widget.pcName}', keys!);
+
+                    var favis = await StoreKeyValue.readStringListData(
+                        'favicon-${PasswordsList.pcManager?.widget.pcName}');
+                    favis?.removeWhere((element) => element.contains(passwordsAndLogins[index]));
+                    await StoreKeyValue.saveData('favicon-${PasswordsList.pcManager?.widget.pcName}', favis!);
+
+
                     SnackBarGenerator.makeSnackBar(
                         context, response['result'].toString(),
                         color: Colors.amberAccent);
-                    filters[passwords[index]] = false;
+                    filters[passwordsAndLogins[index]] = false;
 
                   }, onActionPressed: () {
                     setState(() {
-                      filters[passwords[index]] = false;
+                      filters[passwordsAndLogins[index]] = false;
                     });
                   });
                 },
@@ -182,11 +206,17 @@ class PasswordsListState extends State<PasswordsList> {
                       SizedBox.fromSize(
                         size: const Size(16, 0),
                       ),
+                      isLogin &&faviUrl!='' && widget.keys.contains(passwordsAndLogins[index])?
+                          Image.network(
+                              faviUrl,
+                            width: 38,
+                            height: 38,
+                          ):
                       Icon(
-                        widget.keys.contains(passwords[index])
-                            ? Icons.key
-                            : Icons.key_off,
-                        color: widget.keys.contains(passwords[index])
+                        widget.keys.contains(passwordsAndLogins[index])
+                            ? (isLogin?Icons.person:Icons.key)
+                            : (isLogin?Icons.person_off:Icons.key_off),
+                        color: widget.keys.contains(passwordsAndLogins[index])
                             ? (Colors.white)
                             : Colors.grey[800],
                         size: adjustSizeHorizontally(context, 36),
@@ -198,7 +228,7 @@ class PasswordsListState extends State<PasswordsList> {
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Text(
-                            passwords[index],
+                            passwordsAndLogins[index],
                             style: GoogleFonts.lato(
                                 fontSize: adjustSizeHorizontally(context, 16)),
                           ),
@@ -213,10 +243,10 @@ class PasswordsListState extends State<PasswordsList> {
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               crossAxisSpacing: 4,
               mainAxisSpacing: 4,
-              childAspectRatio: 2.7,
+              childAspectRatio: 2.6,
               maxCrossAxisExtent: adjustSizeHorizontally(context, 240)),
         ),
-        SizedBox(height: MediaQuery.of(context).size.height*0.7*max(0,12-passwords.length)/12,)
+        SizedBox(height: MediaQuery.of(context).size.height*0.7*max(0,12-passwordsAndLogins.length)/12,)
       ],
     );
   }
@@ -225,16 +255,37 @@ class PasswordsListState extends State<PasswordsList> {
   void initState() {
     super.initState();
     getKeys();
+    getDominantColors();
   }
 
   getKeys() async {
     var keys = await StoreKeyValue.readStringListData(
-        'key-${PasswordsList.pcManager?.widget.pcName}');
+        'key-${PasswordsList.pcManager?.widget.pcName}')??[];
+    var favicons=await StoreKeyValue.readStringListData(
+        'favicon-${PasswordsList.pcManager?.widget.pcName}')??[];
+    Map<String,String> urls={};
+    for (var favicon in favicons){
+      urls[favicon.split('@')[0]]=favicon.split('@')[1];
+    }
+
     setState(() {
-      for (var line in keys!) {
+      for (var line in keys) {
         widget.keys.add(line.split('@')[0]);
       }
+      faviconUrls=urls;
     });
+
+
+  }
+
+  getDominantColors() async{
+    var favicons=await StoreKeyValue.readStringListData(
+        'favicon-${PasswordsList.pcManager?.widget.pcName}')??[];
+    for (var favi in favicons){
+      var palette= await PaletteGenerator.fromImageProvider(Image.network(favi.split('@')[1]).image);
+      dominantColors[favi.split('@')[0]]=palette.dominantColor?.color??Colors.grey.shade800;
+    }
+    setState(() { });
   }
 
   static Future<String> requestPassword(
@@ -251,19 +302,57 @@ class PasswordsListState extends State<PasswordsList> {
             "smartphone will store the key.")) {
       return '';
     }
-    var title = await inputDialog(context, "Give a title to the password",
-        "title",  Icons.title,
-        obscuring: false);
+    bool alsoUsername= await yesNoDialog(context, 'Wanna register a full login or just a password?',confirm: 'Full login',cancel: 'Just a pass');
+    var title = await inputDialog(context, alsoUsername?'Give a title to this login':'Give a title to the password',
+        "title",  Icons.title, obscuring: false);
 
     for (String key
         in (await StoreKeyValue.readStringListData('key-$pcName')) ?? []) {
       if (key.split('@')[0].contains(title)) {
+        if(title!=''){
         SnackBarGenerator.makeSnackBar(context,
             "This title has already been used! Please try with another one.",
             color: Colors.red);
+        }
         return '';
       }
     }
+    var username='',url='';
+    var args='';
+
+
+
+    if(alsoUsername){
+      url= await inputDialog(context, "Copy here the url of the login page:",
+          "url",  Icons.web,
+          obscuring: false);
+      if(url!=''){
+        var newUrl=url;
+        if(!url.contains('https://') && !url.contains('http://')){
+          newUrl='http://'+url;
+        }
+        try{
+          var faviUrl=(await favi.Favicon.getBest(newUrl))?.url;
+          StoreKeyValue.appendString('favicon-$pcName', '$title@$faviUrl');
+        }
+        catch(s){}
+
+      if(await yesNoDialog(context, 'Wanna also add actions (Tabs/Enter) to perform when accessing the page before pasting the credentials?',confirm: 'Yes',cancel: 'No')){
+        var argsList=await inputTabAndEnter(context, 'Please reproduce here the sequence of Tabs/Enters to press '
+            'after accessing the page, before the input of the credentials', Icons.keyboard);
+        args=argsList.toString();
+      }
+      }
+
+
+      username = await inputDialog(context, "Insert here your username",
+          "username", Icons.person,
+          obscuring: false);
+      if (username == '') {
+        return '';
+      }
+    }
+
 
     var password = await inputDialog(context, "Insert here your password",
         "password",  Icons.shield,
@@ -272,15 +361,34 @@ class PasswordsListState extends State<PasswordsList> {
       return '';
     }
 
+
+
     var encList = encryptFernet(password);
     var key = encList[0];
     var encryptedPassword = encList[1];
+    var encryptedUsername=alsoUsername?encryptFernetWithKey(username, key):'';
+    var encryptedUrl=alsoUsername?encryptFernetWithKey(url, key):'';
     StoreKeyValue.appendString('key-$pcName', '$title@$key');
-    var response = await requestData(context, HttpType.post, "/storePassword", {
+    print(
+        {
+          'token': await StoreKeyValue.readStringData('token'),
+          'pcName': pcName,
+          'title': title,
+          'username': encryptedUsername,
+          'url':encryptedUrl,
+          'password': encryptedPassword,
+          'args':args
+        }.toString()
+    );
+
+    var response = await requestData(context, HttpType.post, "/storeLogin", {
       'token': await StoreKeyValue.readStringData('token'),
       'pcName': pcName,
       'title': title,
-      'password': encryptedPassword
+      'username': encryptedUsername,
+      'url':encryptedUrl,
+      'password': encryptedPassword,
+      'args':args
     });
     SnackBarGenerator.makeSnackBar(context, response['result']);
 

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mr_power_manager_client/Screens/pc_manager.dart';
 import 'package:mr_power_manager_client/Screens/shimmer.dart';
@@ -320,6 +321,10 @@ class HomeState extends State<Home> {
 
         widget.myStompClient.subscribeMessage(stompFrame, (map) {
           if(Home.stopListenOnMessage){
+            return;
+          }
+          if(map['message'].toString().contains('SHARE_CLIPBOARD')){
+            Clipboard.setData(ClipboardData(text: map['message'].split('@@@')[1].toString()));
             return;
           }
           var max=int.parse(map['message'].split('@@@')[2]);

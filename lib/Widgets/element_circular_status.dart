@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
+import '../Utils/size_adjustaments.dart';
+
 class ElementCircularState extends StatefulWidget {
   ElementCircularState(this.icon, this.value, this.color, this.onPressed,
       {this.scale = 1, this.text = "", this.strict = false,
@@ -31,6 +33,7 @@ class _ElementCircularStateState extends State<ElementCircularState> {
         .withLightness(
             math.pow(HSLColor.fromColor(widget.color).lightness, 0.3) as double)
         .toColor();
+    var newScale=adjustSizeHorizontally(context,widget.scale);
 
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
@@ -41,25 +44,25 @@ class _ElementCircularStateState extends State<ElementCircularState> {
         primary: widget.backgroundInvisible?Colors.transparent:Colors.black.withOpacity(0.16),
         onPrimary: widget.color,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0 * widget.scale),
+          borderRadius: BorderRadius.circular(20.0 * newScale),
         ),
       ),
       onPressed: widget.onPressed,
       child: Padding(
         padding: EdgeInsets.symmetric(
-            vertical: widget.strict?8.0 * widget.scale:8.0 * widget.scale,
-            horizontal: widget.strict?8.0 * widget.scale:20* widget.scale),
+            vertical: widget.strict?8.0 * newScale:8.0 * newScale,
+            horizontal: widget.strict?8.0 * newScale:20* newScale),
         child: CircularPercentIndicator(
           animation: true,
           animateFromLastPercent: true,
           animationDuration: 500,
-          radius: 32.0 * widget.scale,
-          lineWidth: (widget.bigIcon?13.5:15.0) * widget.scale,
+          radius: 32.0 * newScale,
+          lineWidth: (widget.bigIcon?13.5:15.0) * newScale,
           percent: double.parse(widget.value) / 100,
           center: Icon(
             widget.icon,
             color: widget.iconColor==Colors.transparent?lightColor:widget.iconColor,
-            size:(widget.bigIcon?42: 30) * widget.scale,
+            size:(widget.bigIcon?42: 30) * newScale,
           ),
           footer: widget.strict&&widget.text == ""?Container():Column(
             children: [
@@ -68,7 +71,7 @@ class _ElementCircularStateState extends State<ElementCircularState> {
                       "${widget.value}%",
                       textAlign: TextAlign.center,
                       style: GoogleFonts.lato(
-                          fontSize: 18 * widget.scale,
+                          fontSize: 18 * newScale,
                           color: Colors.white,
                           fontWeight: FontWeight.bold),
                     )
@@ -76,7 +79,7 @@ class _ElementCircularStateState extends State<ElementCircularState> {
                       widget.text,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.lato(
-                          fontSize: 18 * widget.scale,
+                          fontSize: 18 * newScale,
                           color: Colors.white,
                           fontWeight: FontWeight.bold),
                     ),

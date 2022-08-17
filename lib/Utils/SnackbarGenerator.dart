@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mr_power_manager_client/Utils/size_adjustaments.dart';
 
 class SnackBarGenerator {
   static void makeSnackBar(BuildContext context, String text,
@@ -9,7 +10,7 @@ class SnackBarGenerator {
     var snackBar = SnackBar(
       content: Text(
         text,
-        style: GoogleFonts.lato(fontSize: fontSize,color: textColor),
+        style: GoogleFonts.lato(fontSize: adjustSizeHorizontally(context, fontSize),color: textColor),
       ),
       backgroundColor: color,
       duration: Duration(milliseconds: millis),

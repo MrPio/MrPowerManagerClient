@@ -83,7 +83,8 @@ class PcManager extends StatefulWidget {
       diskUsage = 0,
       redLightLevel = 0,
       currentWattage = 0;
-  var passwords = [];
+  var passwordsAndLogins = [];
+  var logins = [];
 
   bool wifi = true,
       bluetooth = true,
@@ -131,15 +132,17 @@ class PcManagerState extends State<PcManager>
   int requestWattageDataCalled = 0;
   bool nestScroll = true;
 
-  var passwordsList = PasswordsList(Colors.lightBlue);
+  var passwordsList = PasswordsList();
 
-  static bool passwordPaste = false;
+  static bool passwordPaste = true;
 
   int lastQuality = 50;
 
   bool calledNavigator = false;
 
   bool taskManagerLoading = false;
+
+
 
   @override
   void didChangeDependencies() {
@@ -238,7 +241,7 @@ class PcManagerState extends State<PcManager>
 
   @override
   Widget build(BuildContext context) {
-    var headerBottomScale = adjustSizeHorizontally(context, 0.74);
+    var headerBottomScale = 0.74;
 
     var FABchilds = [
       RotationTransition(
@@ -256,6 +259,8 @@ class PcManagerState extends State<PcManager>
       ),
       Container(),
     ];
+
+    var FABsizes=[66,66,66,78,66,66,66,66,66,66,66,66,66];
 
     var FABcolors = [
       [Colors.blue[900], Colors.blue, Colors.white],
@@ -286,7 +291,8 @@ class PcManagerState extends State<PcManager>
         var key =
             await PasswordsListState.requestPassword(context, widget.pcName);
         if (key != '') {
-          passwordsListState?.getKeys();
+          await passwordsListState?.getKeys();
+          await passwordsListState?.getDominantColors();
           scheduleRefresh();
         }
       },
@@ -346,11 +352,11 @@ class PcManagerState extends State<PcManager>
                         floating: false,
                         stretch: true,
                         forceElevated: innerBoxIsScrolled,
-                        expandedHeight: adjustSizeVertically(
+                        expandedHeight: adjustSizeHorizontally(
                           context,
                           nestScroll ? 270 : 116,
                         ),
-                        toolbarHeight: adjustSizeVertically(context, 116),
+                        toolbarHeight: adjustSizeHorizontally(context, 116),
                         shape: const RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.all(Radius.elliptical(18, 12)),
@@ -368,7 +374,7 @@ class PcManagerState extends State<PcManager>
                                         reverse: true,
                                         children: [
                                           SizedBox(
-                                            height: 280,
+                                            height: adjustSizeHorizontally(context,280),
                                             child: Align(
                                               alignment: Alignment.center,
                                               child: Column(
@@ -377,8 +383,8 @@ class PcManagerState extends State<PcManager>
                                                         .spaceEvenly,
                                                 mainAxisSize: MainAxisSize.max,
                                                 children: [
-                                                  const SizedBox(
-                                                    height: 10,
+                                                  SizedBox(
+                                                    height: adjustSizeHorizontally(context,10),
                                                   ),
                                                   Column(
                                                     children: [
@@ -387,7 +393,7 @@ class PcManagerState extends State<PcManager>
                                                             ? 'online'
                                                             : '',
                                                         style: GoogleFonts.lato(
-                                                          fontSize: 20,
+                                                          fontSize: adjustSizeHorizontally(context,20),
                                                           color: Colors.green,
                                                         ),
                                                         textAlign:
@@ -402,7 +408,7 @@ class PcManagerState extends State<PcManager>
                                                             color: widget.online
                                                                 ? Colors.green
                                                                 : Colors.red,
-                                                            size: 20,
+                                                            size: adjustSizeHorizontally(context,20),
                                                           ),
                                                           const SizedBox(
                                                             width: 8,
@@ -410,7 +416,7 @@ class PcManagerState extends State<PcManager>
                                                           Text(
                                                             widget.pcName,
                                                             style: GoogleFonts.lato(
-                                                                fontSize: 30,
+                                                                fontSize: adjustSizeHorizontally(context,30),
                                                                 color: Colors
                                                                     .white,
                                                                 fontWeight:
@@ -419,15 +425,15 @@ class PcManagerState extends State<PcManager>
                                                             textAlign: TextAlign
                                                                 .center,
                                                           ),
-                                                          const SizedBox(
-                                                            width: 20,
+                                                          SizedBox(
+                                                            width: adjustSizeHorizontally(context,20),
                                                           ),
                                                         ],
                                                       ),
                                                     ],
                                                   ),
-                                                  const SizedBox(
-                                                    height: 4,
+                                                  SizedBox(
+                                                    height: adjustSizeHorizontally(context,4),
                                                   ),
 /*                      ElevatedButton(
                                            child: Padding(
@@ -571,8 +577,8 @@ class PcManagerState extends State<PcManager>
                                                         scale: 0.6,
                                                         text: "CPU",
                                                       ),
-                                                      const SizedBox(
-                                                        width: 10,
+                                                      SizedBox(
+                                                        width: adjustSizeHorizontally(context,10),
                                                       ),
                                                       ElementCircularState(
                                                         widget.gpuTemp > 75
@@ -600,8 +606,8 @@ class PcManagerState extends State<PcManager>
                                                         scale: 0.6,
                                                         text: "GPU",
                                                       ),
-                                                      const SizedBox(
-                                                        width: 10,
+                                                      SizedBox(
+                                                        width: adjustSizeHorizontally(context,10),
                                                       ),
                                                       ElementCircularState(
                                                         Icons.workspaces_filled,
@@ -623,8 +629,8 @@ class PcManagerState extends State<PcManager>
                                                         scale: 0.6,
                                                         text: "RAM",
                                                       ),
-                                                      const SizedBox(
-                                                        width: 10,
+                                                      SizedBox(
+                                                        width: adjustSizeHorizontally(context,10),
                                                       ),
                                                       ElementCircularState(
                                                         Icons.storage,
@@ -662,7 +668,7 @@ class PcManagerState extends State<PcManager>
                                         Text(
                                           widget.online ? 'online' : '',
                                           style: GoogleFonts.lato(
-                                            fontSize: 20,
+                                            fontSize: adjustSizeHorizontally(context,20),
                                             color: Colors.green,
                                           ),
                                           textAlign: TextAlign.center,
@@ -675,28 +681,28 @@ class PcManagerState extends State<PcManager>
                                               color: widget.online
                                                   ? Colors.green
                                                   : Colors.red,
-                                              size: 20,
+                                              size: adjustSizeHorizontally(context,20),
                                             ),
-                                            const SizedBox(
-                                              width: 8,
+                                            SizedBox(
+                                              width: adjustSizeHorizontally(context,8),
                                             ),
                                             Text(
                                               widget.pcName,
                                               style: GoogleFonts.lato(
-                                                  fontSize: 30,
+                                                  fontSize: adjustSizeHorizontally(context,30),
                                                   color: Colors.white,
                                                   fontWeight:
                                                       FontWeight.normal),
                                               textAlign: TextAlign.center,
                                             ),
-                                            const SizedBox(
-                                              width: 20,
+                                            SizedBox(
+                                              width: adjustSizeHorizontally(context,20),
                                             ),
                                           ],
                                         ),
                                         SizedBox(
                                           height:
-                                              adjustSizeVertically(context, 6),
+                                              adjustSizeHorizontally(context, 6),
                                         ),
                                         Row(
                                           mainAxisAlignment:
@@ -779,8 +785,8 @@ class PcManagerState extends State<PcManager>
                                               scale: headerBottomScale,
                                               strict: true,
                                             ),
-                                            const SizedBox(
-                                              width: 20,
+                                            SizedBox(
+                                              width: adjustSizeHorizontally(context,20),
                                             ),
                                             ElementCircularState(
                                                 Icons.memory,
@@ -881,15 +887,15 @@ class PcManagerState extends State<PcManager>
                       children: [
                         Container(
                           color: Colors.black.withOpacity(0.48),
-                          height: 60,
+                          height: adjustSizeHorizontally(context,60),
                           child: Row(
                             children: [
-                              const SizedBox(
-                                width: 28,
+                              SizedBox(
+                                width: adjustSizeHorizontally(context,28),
                               ),
                               SizedBox(
                                 child: Transform.scale(
-                                  scale: 1.45,
+                                  scale: adjustSizeHorizontally(context,1.45),
                                   child: Switch(
                                     onChanged: (bool value) {
                                       setState(() => passwordPaste = value);
@@ -905,12 +911,12 @@ class PcManagerState extends State<PcManager>
                                   ),
                                 ),
                               ),
-                              const SizedBox(
-                                width: 16,
+                              SizedBox(
+                                width: adjustSizeHorizontally(context,16),
                               ),
-                              Text(passwordPaste ? 'Paste' : 'Copy',
+                              Text(passwordPaste ? 'Paste/Login' : 'Copy',
                                   style: GoogleFonts.lato(
-                                      fontSize: 22,
+                                      fontSize: adjustSizeHorizontally(context, 22),
                                       color: passwordPaste
                                           ? Colors.amber.shade100
                                           : Colors.lightBlue.shade100)),
@@ -989,18 +995,19 @@ class PcManagerState extends State<PcManager>
         backgroundColor: Colors.transparent,
         resizeToAvoidBottomInset: false,
         floatingActionButton: SizedBox(
-          width: adjustSizeVertically(context, 66),
-          height: adjustSizeVertically(context, 66),
+          width: adjustSizeHorizontally(context, FABsizes[_currentIndex].toDouble()),
+          height: adjustSizeHorizontally(context, FABsizes[_currentIndex].toDouble()),
           child: _currentIndex != 1 && _currentIndex != 2 && _currentIndex != 4 ? FAB : Container(),
         ),
         bottomNavigationBar: BottomNavigationBar(
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.grey[700],
           backgroundColor: Colors.grey[900],
-          iconSize: 30,
+          iconSize: adjustSizeHorizontally(context,30),
           showUnselectedLabels: false,
-          unselectedIconTheme: const IconThemeData(size: 28),
+          unselectedIconTheme: IconThemeData(size: adjustSizeHorizontally(context,28)),
           currentIndex: _currentIndex,
+          selectedFontSize: adjustSizeHorizontally(context,14),
           onTap: (_index) {
             setState(() {
               _currentIndex = _index;
@@ -1201,9 +1208,12 @@ class PcManagerState extends State<PcManager>
         // widget.hotspot = status['hotspot'].toString().toLowerCase() == 'true';
         // widget.isLock = status['locked'].toString().toLowerCase() == 'true';
 
-        widget.passwords = [];
-        for (var title in (myPc['passwords'] as Map).keys) {
-          widget.passwords.add(title);
+        widget.passwordsAndLogins = [];
+        for (var login in (myPc['logins'])) {
+          widget.passwordsAndLogins.add(login['title']);
+          if(login['username']!=''){
+            widget.logins.add(login['title']);
+          }
         }
 
         if (passwordsListState != null && passwordsListState!.mounted) {
@@ -1554,9 +1564,6 @@ class PcManagerState extends State<PcManager>
                 Commands.SHARE_CLIPBOARD),
           ],
         ),
-        SizedBox(
-          height: adjustSizeVertically(context, 16),
-        ),
       ],
     );
   }
@@ -1585,8 +1592,8 @@ class PcManagerState extends State<PcManager>
               child: GridView.builder(
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                crossAxisSpacing: 4,
-                mainAxisSpacing: 4,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
                 childAspectRatio: 0.9,
                 maxCrossAxisExtent:MediaQuery.of(context).size.width/3-1,
                 ),
@@ -1785,177 +1792,178 @@ class PcManagerState extends State<PcManager>
             padding: const EdgeInsets.all(24.0),
             child: GridView.count(
               crossAxisCount: 2,
-              childAspectRatio: 0.65,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.60,
               shrinkWrap: true,
               children: [
-                Column(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.screen_share,
+                InkWell(
+                  borderRadius: const BorderRadius.all(Radius.circular(18.0)),
+                  splashColor: Colors.black.withOpacity(0.7),
+                  highlightColor: Colors.black.withOpacity(0.2),
+                  onTap: () {
+                    calledNavigator = true;
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      if (!calledNavigator) {
+                        return;
+                      }
+                      calledNavigator = false;
+                      Navigator.pushNamed(context, '/keyboardListener');
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.screen_share,size: 106,
                         color: Colors.yellow.shade200,
                       ),
-                      onPressed: () {
-                        calledNavigator = true;
-                        Future.delayed(const Duration(milliseconds: 300), () {
-                          if (!calledNavigator) {
-                            return;
-                          }
-                          calledNavigator = false;
-                          Navigator.pushNamed(context, '/keyboardListener');
-                        });
-                      },
-                      splashColor: Colors.black.withOpacity(1),
-                      highlightColor: Colors.black.withOpacity(0.2),
-                      iconSize: 110,
-                    ),
-                    Text(
-                      'Remote control                                keyboard',
-                      style: GoogleFonts.lato(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w300,
-                          color: Colors.yellow.shade300),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      Text(
+                        'Remote control                                keyboard',
+                        style: GoogleFonts.lato(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.yellow.shade300),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-                Column(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.camera_alt,
+                InkWell(
+                  borderRadius: const BorderRadius.all(Radius.circular(18.0)),
+                  splashColor: Colors.black.withOpacity(0.7),
+                  highlightColor: Colors.black.withOpacity(0.2),
+                  onTap:  () {
+                    calledNavigator = true;
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      if (!calledNavigator) {
+                        return;
+                      }
+                      calledNavigator = false;
+                      Navigator.pushNamed(context, '/webcamStreaming');
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.camera_alt,size: 106,
                         color: Colors.orange.shade200,
                       ),
-                      onPressed: () {
-                        calledNavigator = true;
-                        Future.delayed(const Duration(milliseconds: 300), () {
-                          if (!calledNavigator) {
-                            return;
-                          }
-                          calledNavigator = false;
-                          Navigator.pushNamed(context, '/webcamStreaming');
-                        });
-                      },
-                      splashColor: Colors.black.withOpacity(1),
-                      highlightColor: Colors.black.withOpacity(0.2),
-                      iconSize: 110,
-                    ),
-                    Text(
-                      'Remote stream                       webcam',
-                      style: GoogleFonts.lato(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w300,
-                          color: Colors.orange.shade300),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      Text(
+                        'Remote stream                       webcam',
+                        style: GoogleFonts.lato(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.orange.shade300),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-                Column(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.mic,
+                InkWell(
+                  borderRadius: const BorderRadius.all(Radius.circular(18.0)),
+                  splashColor: Colors.black.withOpacity(0.7),
+                  highlightColor: Colors.black.withOpacity(0.2),
+                  onTap: () {
+                    calledNavigator = true;
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      if (!calledNavigator) {
+                        return;
+                      }
+                      calledNavigator = false;
+                      Navigator.pushNamed(context, '/sendTextVoice');
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.mic,size: 106,
                         color: Colors.deepOrange.shade200,
                       ),
-                      onPressed: () {
-                        calledNavigator = true;
-                        Future.delayed(const Duration(milliseconds: 300), () {
-                          if (!calledNavigator) {
-                            return;
-                          }
-                          calledNavigator = false;
-                          Navigator.pushNamed(context, '/sendTextVoice');
-                        });
-                      },
-                      splashColor: Colors.black.withOpacity(1),
-                      highlightColor: Colors.black.withOpacity(0.2),
-                      iconSize: 110,
-                    ),
-                    Text(
-                      'Control using your voice',
-                      style: GoogleFonts.lato(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w300,
-                          color: Colors.deepOrange.shade300),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      Text(
+                        'Control using your voice',
+                        style: GoogleFonts.lato(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.deepOrange.shade300),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-                Column(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.camera,
+                InkWell(
+                  borderRadius: const BorderRadius.all(Radius.circular(18.0)),
+                  splashColor: Colors.black.withOpacity(0.7),
+                  highlightColor: Colors.black.withOpacity(0.2),
+                  onTap: () async {
+                    if (!await yesNoDialog(
+                        context,
+                        'Wanna set your pc to record the screen? Please note that this feature required FFmpeg to be installed on your pc;'
+                            'you can follow this guide to do so: https://www.wikihow.com/Install-FFmpeg-on-Windows')) {
+                      return;
+                    }
+                    var fps = await inputDialog(
+                        context,
+                        'The number of frame per second. [1-60]',
+                        '30',
+                        Icons.format_paint_sharp,
+                        numbers: true,
+                        title: 'FPS');
+                    if (fps == '' ||
+                        int.parse(fps) > 60 ||
+                        int.parse(fps) < 1) {
+                      return;
+                    }
+                    int minutes = (await inputMinuteHours(
+                        context,
+                        'Gimme the duration of the recording',
+                        Icons.timer));
+                    if (minutes == 0) {
+                      SnackBarGenerator.makeSnackBar(
+                          context, 'Please give me a value greater than 0!',
+                          color: Colors.red);
+                      return;
+                    } else if (minutes == -1) {
+                      return;
+                    }
+                    var h265 = await yesNoDialog(
+                        context,
+                        'Wanna use the newer codec HEVC(H.265)? You gain'
+                            'better compression paying in higher cpu\'s usage',
+                        confirm: 'H.265',
+                        cancel: 'H.264');
+                    lastQuality = await showDialog<int>(
+                        context: context,
+                        builder: (context) => sliderDialog(
+                            "Quality",
+                            lastQuality == -1 ? 50 : lastQuality,
+                            20,
+                            Icons.high_quality)) ??
+                        -1;
+                    if (lastQuality == -1) {
+                      return;
+                    }
+                    var quality = 51 - lastQuality * 51 / 100;
+
+                    var command =
+                        'RECORD_SECONDS@@@$fps@@@${minutes * 60}@@@$quality@@@$h265';
+
+                    sendCommand(null, command);
+                  },
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.camera,size: 106,
                         color: Colors.redAccent.shade100,
                       ),
-                      onPressed: () async {
-                        if (!await yesNoDialog(
-                            context,
-                            'Wanna set your pc to record the screen? Please note that this feature required FFmpeg to be installed on your pc;'
-                            'you can follow this guide to do so: https://www.wikihow.com/Install-FFmpeg-on-Windows')) {
-                          return;
-                        }
-                        var fps = await inputDialog(
-                            context,
-                            'The number of frame per second. [1-60]',
-                            '30',
-                            Icons.format_paint_sharp,
-                            numbers: true,
-                            title: 'FPS');
-                        if (fps == '' ||
-                            int.parse(fps) > 60 ||
-                            int.parse(fps) < 1) {
-                          return;
-                        }
-                        int minutes = (await inputMinuteHours(
-                            context,
-                            'Gimme the duration of the recording',
-                            Icons.timer));
-                        if (minutes == 0) {
-                          SnackBarGenerator.makeSnackBar(
-                              context, 'Please give me a value greater than 0!',
-                              color: Colors.red);
-                          return;
-                        } else if (minutes == -1) {
-                          return;
-                        }
-                        var h265 = await yesNoDialog(
-                            context,
-                            'Wanna use the newer codec HEVC(H.265)? You gain'
-                            'better compression paying in higher cpu\'s usage',
-                            confirm: 'H.265',
-                            cancel: 'H.264');
-                        lastQuality = await showDialog<int>(
-                                context: context,
-                                builder: (context) => sliderDialog(
-                                    "Quality",
-                                    lastQuality == -1 ? 50 : lastQuality,
-                                    20,
-                                    Icons.high_quality)) ??
-                            -1;
-                        if (lastQuality == -1) {
-                          return;
-                        }
-                        var quality = 51 - lastQuality * 51 / 100;
-
-                        var command =
-                            'RECORD_SECONDS@@@$fps@@@${minutes * 60}@@@$quality@@@$h265';
-
-                        sendCommand(null, command);
-                      },
-                      splashColor: Colors.black.withOpacity(1),
-                      highlightColor: Colors.black.withOpacity(0.2),
-                      iconSize: 110,
-                    ),
-                    Text(
-                      'Schedule record                       screen',
-                      style: GoogleFonts.lato(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w300,
-                          color: Colors.redAccent.shade200),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      Text(
+                        'Schedule record                       screen',
+                        style: GoogleFonts.lato(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.redAccent.shade200),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 )
               ],
             ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinbox/flutter_spinbox.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mr_power_manager_client/Utils/SnackbarGenerator.dart';
 import 'package:mr_power_manager_client/Utils/size_adjustaments.dart';
 
 Future<String> inputDialog(
@@ -375,4 +376,152 @@ Future<int> inputMinuteHours(
           ]);
     },
   )??-1;
+}
+
+
+
+Future<List<String>> inputTabAndEnter(
+    BuildContext context,
+    String contentText,
+    IconData icon,
+    {String? title,}) async {
+  List<String> args=[];
+  return await showDialog<List<String>>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+
+          title: title==null?null:Text(
+            title,
+            style: GoogleFonts.lato(fontSize: 20,),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                fit: FlexFit.loose,
+                child: SingleChildScrollView(
+                  child: Text(
+                    contentText,
+                    style: GoogleFonts.lato(fontSize: 18,fontWeight: FontWeight.w300),
+                  ),
+                ),
+              ),
+              SizedBox(height: adjustSizeVertically(context, 36),),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Container(
+                    decoration:BoxDecoration(
+                        color: Colors.amber.shade200.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8)
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        args.add('TAB');
+                        SnackBarGenerator.makeSnackBar(context, '${_argsToString(args)}');
+                      },
+                      splashColor: Colors.amber.shade700,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0,vertical: 8.0),
+                        child: Column(
+                          children: [
+                            Icon(Icons.keyboard_tab,size: 32,color: Colors.amber.shade200,),
+                            SizedBox.fromSize(size: const Size(0,4),),
+                            Text('TAB',style: GoogleFonts.lato(fontSize: 16),)
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    decoration:BoxDecoration(
+                        color: Colors.lightBlue.shade200.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8)
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: ()  {
+                        args.add('ENTER');
+                        SnackBarGenerator.makeSnackBar(context, '${_argsToString(args)}');
+                      },
+                      splashColor: Colors.lightBlue.shade700,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0,vertical: 8.0),
+                        child: Column(
+                          children: [
+                            Icon(Icons.keyboard_return,size: 32,color: Colors.lightBlue.shade200,),
+                            SizedBox.fromSize(size: const Size(0,4),),
+                            Text('RETURN',style: GoogleFonts.lato(fontSize: 16),)
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+/*              SizedBox(height: adjustSizeVertically(context, 6),),
+              Text(
+                args.toString(),
+                style: GoogleFonts.lato(fontSize: 18,fontWeight: FontWeight.w300),
+              ),*/
+            ],
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                elevation: 2,
+                primary: Colors.deepOrangeAccent,
+                onPrimary: Colors.red[800],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: Text('CANCEL',
+                  style: GoogleFonts.lato(fontSize: 16, color: Colors.white)),
+              onPressed: () {
+                return Navigator.pop(context,<String>[]);
+              },
+            ),
+            ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  elevation: 2,
+                  primary: Colors.lightGreen,
+                  onPrimary: Colors.green[800],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: Text('CONFIRM',
+                    style: GoogleFonts.lato(fontSize: 16, color: Colors.white)),
+                onPressed: () {
+                  return Navigator.pop(context,args );
+                })
+          ]);
+    },
+  )??[];
+
+}
+
+_argsToString(List<String> args){
+  var result='';
+  var last='';
+  var count=0;
+  for(var arg in args){
+    if(last==''){
+      last=arg;
+    }
+    if(last!=arg){
+      result+=last+' x$count + ';
+      count=0;
+      last=arg;
+    }
+    count++;
+  }
+  result+=count>0?last+' x$count':'';
+  return result;
 }

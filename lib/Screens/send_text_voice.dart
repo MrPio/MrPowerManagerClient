@@ -119,7 +119,8 @@ class _SendTextVoiceState extends State<SendTextVoice>
                                   speech.listen( onResult: (result) {
                                     speech_to_text=result.recognizedWords;
                                     if(speech_to_text.length!=last_speech_to_text){
-                                      Home.pcManagerState?.sendCommand(null, 'SPEECH_TO_TEXT@@@'+speech_to_text.substring(last_speech_to_text),snackbar: false);
+                                      log(speech_to_text.substring(last_speech_to_text));
+                                      // Home.pcManagerState?.sendCommand(null, 'SPEECH_TO_TEXT@@@'+speech_to_text.substring(last_speech_to_text),snackbar: false);
                                     }
                                     last_speech_to_text=speech_to_text.length;
                                   });

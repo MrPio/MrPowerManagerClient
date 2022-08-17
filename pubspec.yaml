@@ -55,6 +55,7 @@ dependencies:
   permission_handler: ^9.2.0
   speech_to_text: ^5.6.1
   palette_generator: ^0.3.3+1
+  favicon: ^1.0.15
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -112,3 +113,5 @@ flutter:
     - family: lcd
       fonts:
         - asset: fonts/lcd.ttf
+  assets:
+    - assets/images/
