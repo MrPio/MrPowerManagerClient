@@ -73,7 +73,7 @@ class MyStompClient {
   subscribeMessage(StompFrame frame, Function(Map) onCallback) {
     print('subscribeMessage...');
     stompClient.subscribe(
-        destination: '/both/${keepOnlyAlphaNum(token)}/message',
+        destination: '/client/${keepOnlyAlphaNum(token)}/message',
         callback: (StompFrame frame) {
           if (frame.body != null) {
             var jsonData = json.decode(frame.body ?? '');

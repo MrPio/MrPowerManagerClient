@@ -31,5 +31,6 @@ enum Commands {
   WATTAGE,
   PASSWORD,
   SHARE_CLIPBOARD,
+  SEND_CLIPBOARD,
   KEYBOARD,
 }

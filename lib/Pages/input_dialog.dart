@@ -378,6 +378,89 @@ Future<int> inputMinuteHours(
   )??-1;
 }
 
+Future<int> inputNumber(
+    BuildContext context,
+    String contentText,
+    IconData icon,
+    {String? title,int startValue=1,}) async {
+  int num=1;
+  int num2=0;
+  return await showDialog<int>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+
+          title: title==null?null:Text(
+            title,
+            style: GoogleFonts.lato(fontSize: 20,),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                fit: FlexFit.loose,
+                child: SingleChildScrollView(
+                  child: Text(
+                    contentText,
+                    style: GoogleFonts.lato(fontSize: 18,fontWeight: FontWeight.w300),
+                  ),
+                ),
+              ),
+              SizedBox(height: adjustSizeVertically(context, 20),),
+
+              Text("Value:",style: GoogleFonts.lato(fontSize: 24,fontWeight: FontWeight.w300),),
+              const SizedBox(height: 10,),
+              SpinBox(
+                min: 1,
+                max: 20,
+                value: startValue.toDouble(),
+                step: 1,
+                acceleration: 3,
+                showButtons: true,
+                decoration: InputDecoration(border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18))),
+                textStyle: GoogleFonts.lato(fontSize: 22,fontWeight: FontWeight.bold),
+                onChanged: (value) => num=value.toInt(),
+              ),
+
+            ],
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                elevation: 2,
+                primary: Colors.deepOrangeAccent,
+                onPrimary: Colors.red[800],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: Text('CANCEL',
+                  style: GoogleFonts.lato(fontSize: 16, color: Colors.white)),
+              onPressed: () {
+                return Navigator.pop(context,-1);
+              },
+            ),
+            ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  elevation: 2,
+                  primary: Colors.lightGreen,
+                  onPrimary: Colors.green[800],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: Text('CONFIRM',
+                    style: GoogleFonts.lato(fontSize: 16, color: Colors.white)),
+                onPressed: () {
+                  return Navigator.pop(context,num+num2*60 );
+                })
+          ]);
+    },
+  )??-1;
+}
+
 
 
 Future<List<String>> inputTabAndEnter(

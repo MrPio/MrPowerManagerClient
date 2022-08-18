@@ -56,6 +56,9 @@ dependencies:
   speech_to_text: ^5.6.1
   palette_generator: ^0.3.3+1
   favicon: ^1.0.15
+  clipboard_listener: ^2.0.0
+  clipboard_monitor: ^0.9.2
+  gallery_saver: ^2.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

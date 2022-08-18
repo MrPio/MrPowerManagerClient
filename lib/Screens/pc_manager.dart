@@ -94,7 +94,7 @@ class PcManager extends StatefulWidget {
       redLight = true,
       saveBattery = true,
       hotspot = true,
-      isLock = false;
+      isClipboardShared = false;
   double opacityTop = 1, opacityBottom = 0;
   DateTime lastStatusEditedByClient = DateTime.fromMicrosecondsSinceEpoch(0);
   List<String> windowsTitle = [];
@@ -163,7 +163,7 @@ class PcManagerState extends State<PcManager>
         false) {
       PcManager.myStompClient?.unsubscribe[widget.pcName] = false;
     } else {
-      var callback = (map) {
+      void callback (map) {
         Home.pcManagerState?.setState(() {
           var widget = Home.pcManagerState?.widget ?? this.widget;
           if ((DateTime.now().difference(widget.lastStatusEditedByClient))
@@ -197,7 +197,7 @@ class PcManagerState extends State<PcManager>
           widget.saveBattery =
               map['saveBattery'].toString().toLowerCase() == 'true';
           widget.hotspot = map['hotspot'].toString().toLowerCase() == 'true';
-          widget.isLock = map['locked'].toString().toLowerCase() == 'true';
+          widget.isClipboardShared = map['clipboardShared'].toString().toLowerCase() == 'true';
 
           var w1m = PcManager.wattageValues1m;
 
@@ -232,7 +232,7 @@ class PcManagerState extends State<PcManager>
           w1m.todayWattHour =
               w1m.watts.map((e) => e).reduce((a, b) => a + b) / 3600;
         });
-      };
+      }
       PcManager.myStompClient?.subscribeStatusCallbacks[widget.pcName] =
           callback;
       PcManager.myStompClient?.subscribeStatus(widget.pcName, callback);
@@ -260,7 +260,7 @@ class PcManagerState extends State<PcManager>
       Container(),
     ];
 
-    var FABsizes=[66,66,66,78,66,66,66,66,66,66,66,66,66];
+    var FABsizes=[70,66,66,78,66,66,66,66,66,66,66,66,66];
 
     var FABcolors = [
       [Colors.blue[900], Colors.blue, Colors.white],
@@ -1371,7 +1371,7 @@ class PcManagerState extends State<PcManager>
    * se il pc è online mando il comando tramite socket, altrimenti lo mando alla api per memorizzarlo
    */
   void sendCommand(DateTime? scheduledDate, String command,
-      {int value = -1, bool snackbar = true}) async {
+      {int value = -1, bool snackbar = false}) async {
     var newToken = keepOnlyAlphaNum(PcManager.token);
     var newPcName = keepOnlyAlphaNum(widget.pcName);
     var formattedDate = '';
@@ -1421,7 +1421,7 @@ class PcManagerState extends State<PcManager>
   }
 
   sendBase64(String data, String header) {
-    Home.stopListenOnMessage = true;
+    // Home.stopListenOnMessage = true;
     setState(() {});
     var BYTES_LIMIT = 14000;
     var max = data.length ~/ BYTES_LIMIT;
@@ -1437,11 +1437,17 @@ class PcManagerState extends State<PcManager>
         data = data.substring(BYTES_LIMIT);
       }
       PcManager.myStompClient?.stompClient.send(
-          destination: "/app/sendMessage/${PcManager.token}/${widget.pcName}",
+          destination: "/app/sendMessage/to/server/${PcManager.token}/${widget.pcName}",
           body: msg);
 
-      Home.stopListenOnMessage = false;
+      // Home.stopListenOnMessage = false;
     }
+  }
+
+  sendMessage(String msg) {
+    PcManager.myStompClient?.stompClient.send(
+        destination: "/app/sendMessage/to/server/${PcManager.token}/${widget.pcName}",
+        body: msg);
   }
 
   controlScreen() {
@@ -1551,16 +1557,16 @@ class PcManagerState extends State<PcManager>
             CommandShape(
                 widget.pcName,
                 Colors.pinkAccent[100] ?? Colors.pinkAccent,
-                'Keyboard',
-                Icons.keyboard,
+                'Send my clipboard',
+                Icons.paste,
                 true,
-                Commands.KEYBOARD),
+                Commands.SEND_CLIPBOARD),
             CommandShape(
                 widget.pcName,
                 Colors.pinkAccent[300] ?? Colors.pinkAccent,
-                'Share clip.',
-                Icons.content_paste,
-                true,
+                'Toggle get pc screenshots',
+                Icons.copy,
+                widget.isClipboardShared,
                 Commands.SHARE_CLIPBOARD),
           ],
         ),
@@ -2021,7 +2027,7 @@ class PcManagerState extends State<PcManager>
   }
 
   void pollingActiveWindows() async {
-    Future.delayed(const Duration(milliseconds: 2000), () {
+    Future.delayed(const Duration(milliseconds: 3000), () {
       if (_currentIndex==1) {
         sendCommand(null, 'TASK_MANAGER', snackbar: false);
       }

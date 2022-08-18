@@ -1,11 +1,14 @@
 import 'dart:math';
 
+import 'package:clipboard_listener/clipboard_listener.dart';
+import 'package:clipboard_monitor/clipboard_monitor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mr_power_manager_client/Pages/input_dialog.dart';
 import 'package:mr_power_manager_client/Utils/SnackbarGenerator.dart';
+import 'package:mr_power_manager_client/Utils/StoreKeyValue.dart';
 import 'package:mr_power_manager_client/Utils/size_adjustaments.dart';
 
 import '../Screens/Home.dart';
@@ -18,6 +21,7 @@ class CommandShape extends StatefulWidget {
       {super.key});
 
   static PcManagerState? pcManager;
+  static Map<Commands,int> multiplication={};
   Color color = Colors.white;
   bool selected = false;
   IconData icon = Icons.alarm;
@@ -47,8 +51,8 @@ class _CommandShapeState extends State<CommandShape> {
       onTap: () {
         if (widget.text == "Lock" || widget.text == "Unlock") {
           CommandShape.pcManager?.setState(() {
-            CommandShape.pcManager?.widget.isLock =
-                !(CommandShape.pcManager?.widget.isLock ?? true);
+            CommandShape.pcManager?.widget.isClipboardShared =
+                !(CommandShape.pcManager?.widget.isClipboardShared ?? true);
           });
         } else if (widget.text == "Wifi") {
           CommandShape.pcManager?.setState(() {
@@ -82,11 +86,27 @@ class _CommandShapeState extends State<CommandShape> {
           });
         });
       },
-      onLongPress: () {
+      onLongPress: () async {
+
+        if([Commands.SOUND_UP,Commands.SOUND_DOWN,Commands.BRIGHTNESS_UP,
+          Commands.BRIGHTNESS_DOWN,Commands.TRACK_PREVIOUS,Commands.TRACK_NEXT].contains(widget.command)){
+
+          if(await yesNoDialog(context, 'Wanna set a command multiplication or schedule the command?',
+              confirm: 'Multiplication',cancel: 'Schedule')){
+            var val=await inputNumber(context, 'Input the number of time you want this command to be executed.'
+                ' I will remember it.', Icons.numbers,title: 'Command multiplication',startValue: CommandShape.multiplication[widget.command]??1);
+            if(val!=-1){
+              CommandShape.multiplication[widget.command]=val;
+              await StoreKeyValue.saveData('${Home.pcManagerState?.widget.pcName}-${widget.command}', val);
+            }
+            return;
+          }
+        }
+
         SnackBarGenerator.makeSnackBar(
             context, "Please select a date to schedule the command",
-            color: Colors.blue, millis: 800);
-        Future.delayed(const Duration(milliseconds: 800), () async {
+            color: Colors.blue, millis: 600);
+        Future.delayed(const Duration(milliseconds: 600), () async {
           DatePicker.showDateTimePicker(context,
               showTitleActions: true,
               minTime: DateTime(
@@ -136,7 +156,8 @@ class _CommandShapeState extends State<CommandShape> {
               child: Padding(
                 padding: const EdgeInsets.all(7.0),
                 child: Text(
-                  widget.text,
+                  (CommandShape.multiplication[widget.command]??1)==1?
+                  widget.text:widget.text+' (x${CommandShape.multiplication[widget.command]})',
                   style: GoogleFonts.lato(
                       fontSize: 17 * scale,
                       color: Colors.grey[800],
@@ -178,33 +199,33 @@ class _CommandShapeState extends State<CommandShape> {
       return;
     }
 
-    if(widget.command==Commands.SHUTDOWN &&
-    !await yesNoDialog(context, 'Are you REALLY sure you want to shut down your pc? You may lose unsaved data!')) {
+    if (widget.command == Commands.SHUTDOWN &&
+        !await yesNoDialog(context,
+            'Are you REALLY sure you want to shut down your pc? You may lose unsaved data!')) {
       return;
     }
-
 
     var pcManagerWidget = Home.pcManagerState?.widget;
 
     Home.pcManagerState?.setState(() {
-      pcManagerWidget?.lastStatusEditedByClient=DateTime.now();
+      pcManagerWidget?.lastStatusEditedByClient = DateTime.now();
       switch (widget.command) {
         case Commands.SOUND_UP:
           Home.pcManagerState?.widget.volume =
-              min(100, (pcManagerWidget?.volume ?? 0) + 2);
+              min(100, (pcManagerWidget?.volume ?? 0) + 2*(CommandShape.multiplication[widget.command]??1));
           break;
         case Commands.SOUND_DOWN:
           Home.pcManagerState?.widget.volume =
-              max(0, (pcManagerWidget?.volume ?? 0) - 2);
+              max(0, (pcManagerWidget?.volume ?? 0) - 2*(CommandShape.multiplication[widget.command]??1));
           break;
 
         case Commands.BRIGHTNESS_UP:
           Home.pcManagerState?.widget.brightness =
-              min(100, (pcManagerWidget?.brightness ?? 0) + 10);
+              min(100, (pcManagerWidget?.brightness ?? 0) + 10*(CommandShape.multiplication[widget.command]??1));
           break;
         case Commands.BRIGHTNESS_DOWN:
           Home.pcManagerState?.widget.brightness =
-              max(0, (pcManagerWidget?.brightness ?? 0) - 10);
+              max(0, (pcManagerWidget?.brightness ?? 0) - 10*(CommandShape.multiplication[widget.command]??1));
           break;
 /*        case Commands.NO_SOUND:
           var c = pcManagerWidget?.backupVolume;
@@ -221,18 +242,37 @@ class _CommandShapeState extends State<CommandShape> {
       return;
     }
     if (widget.command == Commands.SHARE_CLIPBOARD) {
-      ClipboardData? data = await Clipboard.getData('text/plain');
-      var dataStr = data?.text;
-      Home.pcManagerState?.sendCommand(
-          scheduledDate, widget.command.name + "@@@@@@@@@@@@$dataStr",
+      Home.pcManagerState?.setState(() {
+        Home.pcManagerState?.widget.lastStatusEditedByClient = DateTime.now();
+        Home.pcManagerState?.widget.isClipboardShared =
+            !(Home.pcManagerState?.widget.isClipboardShared ?? true);
+      });
+      var isClipboardShared =
+          Home.pcManagerState?.widget.isClipboardShared ?? false;
+      Home.pcManagerState?.sendCommand(scheduledDate,
+          widget.command.name + '@@@' + isClipboardShared.toString(),
           value: value);
-    } else if (widget.command == Commands.KEYBOARD) {
-      SnackBarGenerator.makeSnackBar(context,
-          'Please use the Remote control screen to gain full remote access to your pc!',
-          color: Colors.lightBlue.shade300);
+      
+      if (isClipboardShared) {
+        //LISTNER NON FUNZIONA, E POI SE isClipboardShared==TRUE FALLO PARTIRE ALLAVVIO
+        ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+        Home.pcManagerState?.sendMessage("SHARE_CLIPBOARD@@@${data?.text}");
+        ClipboardMonitor.registerCallback((str)=>Home.clipboardListener(context,str));
+      }
+      else{
+        ClipboardMonitor.unregisterCallback((str)=>Home.clipboardListener(context,str));
+      }
+    } else if (widget.command == Commands.SEND_CLIPBOARD) {
+      ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+      Home.pcManagerState?.sendCommand(null,"SEND_CLIPBOARD@@@${data?.text}");
     } else {
-      Home.pcManagerState
-          ?.sendCommand(scheduledDate, widget.command.name, value: value);
+      var multi='';
+      if([Commands.SOUND_UP,Commands.SOUND_DOWN,Commands.BRIGHTNESS_UP,
+        Commands.BRIGHTNESS_DOWN,Commands.TRACK_PREVIOUS,Commands.TRACK_NEXT].contains(widget.command)) {
+        multi='@@@${(CommandShape.multiplication[widget.command]??1)}';
+      }
+        Home.pcManagerState
+          ?.sendCommand(scheduledDate, widget.command.name+multi, value: value);
     }
   }
 
@@ -246,5 +286,19 @@ class _CommandShapeState extends State<CommandShape> {
     NON SERVE MAI SU QUESTI OGGETTI SETTARE IL VALORE*/
     sendCommand(widget.pcName, date);
     //}
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    if([Commands.SOUND_UP,Commands.SOUND_DOWN,Commands.BRIGHTNESS_UP,
+      Commands.BRIGHTNESS_DOWN,Commands.TRACK_PREVIOUS,Commands.TRACK_NEXT].contains(widget.command)) {
+
+      ()async{
+      var val=await StoreKeyValue.readIntData('${Home.pcManagerState?.widget.pcName}-${widget.command}');
+      CommandShape.multiplication[widget.command]=val==0?1:val;
+    }.call();
+    }
   }
 }

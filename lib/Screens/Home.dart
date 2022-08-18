@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:typed_data';
 
+import 'package:clipboard_monitor/clipboard_monitor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:mr_power_manager_client/Screens/pc_manager.dart';
 import 'package:mr_power_manager_client/Screens/shimmer.dart';
 import 'package:mr_power_manager_client/Utils/StoreKeyValue.dart';
@@ -20,6 +23,15 @@ import '../Utils/SnackbarGenerator.dart';
 import '../Widgets/process_box.dart';
 
 class Home extends StatefulWidget {
+
+  static void clipboardListener(context,str) async {
+    print('SHARE_CLIPBOARD_listner');
+    if (str != '') {
+      Home.pcManagerState?.sendMessage("SHARE_CLIPBOARD@@@$str");
+      SnackBarGenerator.makeSnackBar(context, 'Clipboard shared!');
+    }
+  }
+
   Home({Key? key}) : super(key: key);
 
   static PcManagerState? pcManagerState;
@@ -27,7 +39,7 @@ class Home extends StatefulWidget {
   List<Widget> pcListWidget = [];
   List<Widget> shimmerPcListWidget = [];
   static String token = '';
-  static bool stopListenOnMessage=false;
+  // static bool stopListenOnMessage=false;
   TextEditingController inputBoxText = TextEditingController();
   List<String> pcNames = [];
   Map<String, bool> pcStatus = {};
@@ -43,6 +55,16 @@ class Home extends StatefulWidget {
 class HomeState extends State<Home> {
   bool tapped=false;
   String message='';
+
+  // Timer clipboardTriggerTime= Timer.periodic(
+  //   const Duration(seconds: 5),
+  //       (timer) {
+  //     Clipboard.getData('text/plain').then((clipboardContent) {
+  //       log('Clipboard content ${clipboardContent?.text}');
+  //
+  //     });
+  //   },
+  // );
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +314,7 @@ class HomeState extends State<Home> {
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(milliseconds: 50), () async {
+    Future.delayed(const Duration(milliseconds: 0), () async {
       var token = await StoreKeyValue.readStringData('token');
       setState(() {
         Home.token = token;
@@ -320,9 +342,10 @@ class HomeState extends State<Home> {
         });
 
         widget.myStompClient.subscribeMessage(stompFrame, (map) {
-          if(Home.stopListenOnMessage){
-            return;
-          }
+          // if(Home.stopListenOnMessage){
+          //   return;
+          // }
+          log(map['message'].split('@@@')[0]);
           if(map['message'].toString().contains('SHARE_CLIPBOARD')){
             Clipboard.setData(ClipboardData(text: map['message'].split('@@@')[1].toString()));
             return;
@@ -414,6 +437,20 @@ class HomeState extends State<Home> {
                 Home.pcManagerState?.widget.windows=windowsProcessBox;
               });
             }
+
+            else if (map['message'].split('@@@')[0] == "CLIPBOARD_IMAGE") {
+              log('SHARE_CLIPBOARD_IMAGE');
+                Uint8List? image;
+                try{
+                  image=base64Decode(message);
+                }catch(e){
+                  print('err');
+                  return;
+                }
+                StoreKeyValue.writeFile(image, 'SharedImage ${
+                  DateFormat('yyyy-MM-dd HH-mm-ss').format(DateTime.now())}.jpg');
+                SnackBarGenerator.makeSnackBar(context, 'Pc screenshot saved to gallery!',color: Colors.amber.shade600);
+            }
           }
         });
 
@@ -498,19 +535,20 @@ class HomeState extends State<Home> {
   }
 
   poolingImOnline() async {
-    Future.delayed(const Duration(seconds: 16), () {
+    Future.delayed(const Duration(seconds: 5), () {
       sendOnline();
 /*
       requestData(context, HttpType.get, '/login',
           {'token': Home.token, 'imTheClient': 'true'});
 */
-      print('Im online sent!');
+      // print('Im online sent!');
       poolingImOnline();
     });
   }
 
 
   sendOnline(){
+    // log('mandato l-online al server!');
       widget.myStompClient.stompClient.send(
           destination: "/app/setOnline/${PcManager.token}", body: 'true');
   }

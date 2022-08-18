@@ -74,12 +74,13 @@ class _ProcessBoxState extends State<ProcessBox> {
             Flexible(
               flex: 2,
               child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
                   scrollDirection: Axis.vertical,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(trimmedText, maxLines: 999,textAlign: TextAlign.center,
                       style: GoogleFonts.lato(
-                          fontSize: 17, fontWeight: FontWeight.w300),),
+                          fontSize: adjustSizeHorizontally(context, 16), fontWeight: FontWeight.w300),),
                   )),
             ),
             SizedBox.fromSize(size: const Size(0,4),)
