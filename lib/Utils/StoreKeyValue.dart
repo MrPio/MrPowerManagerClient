@@ -1,6 +1,8 @@
+import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:file_saver/file_saver.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -94,7 +96,7 @@ class StoreKeyValue {
 
 
 
-  static Future<void> writeFile(Uint8List data, String name) async {
+  static Future<void> writeImage(Uint8List data, String name) async {
     // storage permission ask
     var status = await Permission.storage.status;
     if (!status.isGranted) {
@@ -113,4 +115,16 @@ class StoreKeyValue {
     await (await File(filePath).create(recursive: true)).writeAsBytes(buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),mode: FileMode.write);
     GallerySaver.saveImage(filePath);
   }
+
+  static Future<void> writeFile(Uint8List data, String name,String ext,
+      {MimeType mimeType = MimeType.OTHER}) async {
+    // storage permission ask
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      await Permission.storage.request();
+    }
+    String path = await FileSaver.instance.saveAs(name, data,ext,mimeType);
+    log(path);
+  }
+
 }

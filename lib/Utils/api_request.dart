@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -76,8 +77,10 @@ class MyStompClient {
         destination: '/client/${keepOnlyAlphaNum(token)}/message',
         callback: (StompFrame frame) {
           if (frame.body != null) {
+            var startr=DateTime.now();
             var jsonData = json.decode(frame.body ?? '');
             onCallback(jsonData);
+            // log((DateTime.now().difference(startr).inMicroseconds).toString());
           }
         });
   }

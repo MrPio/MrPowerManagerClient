@@ -21,6 +21,8 @@ import '../Pages/input_dialog.dart';
 import '../Styles/background_gradient.dart';
 import '../Utils/SnackbarGenerator.dart';
 import '../Widgets/process_box.dart';
+import 'dart:io';
+import 'dart:typed_data';
 
 class Home extends StatefulWidget {
 
@@ -54,7 +56,12 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   bool tapped=false;
-  String message='';
+  String header='',message='';
+  StringBuffer messageBuffer = StringBuffer();
+
+  var lastSnackbar=DateTime.now();
+  var messageStart=DateTime.now(),lastMessage=DateTime.now();
+  List<double> times=[];
 
   // Timer clipboardTriggerTime= Timer.periodic(
   //   const Duration(seconds: 5),
@@ -309,10 +316,47 @@ class HomeState extends State<Home> {
     widget.myStompClient.stompClient.deactivate();
   }
 
+  var index=0,max=0;
+
+  Future<void> sendMessage(Socket socket, String message) async {
+    print('Client: $message');
+    socket.write(message);
+  }
 
   @override
   void initState() {
     super.initState();
+
+
+    // Future.delayed(Duration.zero,()async{
+    //   print('vado');
+    //   final socket = await Socket.connect('192.168.56.1', 80);
+    //   print('Connected to: ${socket.remoteAddress.address}:${socket.remotePort}');
+    //
+    //   // listen for responses from the server
+    //   // socket.listen(
+    //   //
+    //   //   // handle data from the server
+    //   //       (Uint8List data) {
+    //   //     final serverResponse = String.fromCharCodes(data);
+    //   //     print('Server: $serverResponse');
+    //   //   },
+    //   //
+    //   //   // handle errors
+    //   //   onError: (error) {
+    //   //     print(error);
+    //   //     socket.destroy();
+    //   //   },
+    //   //
+    //   //   // handle server ending connection
+    //   //   onDone: () {
+    //   //     print('Server left.');
+    //   //     socket.destroy();
+    //   //   },
+    //   // );
+    //
+    // });
+
 
     Future.delayed(const Duration(milliseconds: 0), () async {
       var token = await StoreKeyValue.readStringData('token');
@@ -345,22 +389,63 @@ class HomeState extends State<Home> {
           // if(Home.stopListenOnMessage){
           //   return;
           // }
-          log(map['message'].split('@@@')[0]);
-          if(map['message'].toString().contains('SHARE_CLIPBOARD')){
-            Clipboard.setData(ClipboardData(text: map['message'].split('@@@')[1].toString()));
-            return;
+          // log(map['message'].split('@@@')[0]);
+          // log('msg--->'+map['message']);
+          // log('len--->'+map['message'].toString().length.toString());
+          // log('match--->'+'1'.allMatches(map['message'].toString()).length.toString());
+          sleep(const Duration(microseconds:1800));
+
+         if((DateTime.now().difference(lastMessage).inMilliseconds>3000)) {
+           log('RESETTO==================================================================');
+           index=0;
+         }
+          lastMessage = DateTime.now();
+
+          if (index == 0) {
+            log('index == 0');
+            messageBuffer=StringBuffer();
+            // index=int.parse(map['message'].split('@@@')[1]);
+            messageStart = DateTime.now();
+            if(map['message'].split('@@@')[0]=='START_OF_MESSAGE'){
+              log('[START_OF_MESSAGE] received');
+              log(map['message']);
+              header=map['message'].split('@@@')[1];
+              max = int.parse(map['message'].split('@@@')[2]);
+              log('max--->$max');
+              index++;
+              return;
+            }
           }
-          var max=int.parse(map['message'].split('@@@')[2]);
-          var index=int.parse(map['message'].split('@@@')[1]);
-          if(index==0) {
-            message='';
-          }
-          message+=map['message'].split('@@@')[3];
+          // log(((10000 * index ~/ max) / 100).toString()+'%');
+
+
+
+          // if(map['message'].split('@@@')[0].contains('FILE_FROM_SERVER')){
+          //   if((DateTime.now().difference(lastSnackbar).inMilliseconds>1000)) {
+          //     lastSnackbar=DateTime.now();
+          //     SnackBarGenerator.makeSnackBar(
+          //         context, 'Incoming file... ${(10000 * index ~/ max) / 100}',
+          //         color: Colors.teal.shade300);
+          //   }
+          // }
+
+          // var startr=DateTime.now();
+          // message+=map['message'];
+          messageBuffer.write(map['message']);
+          // messageBuffer.write(map['message'].split('@@@')[3]);
+          // message+=map['message'];
+          // times.add((DateTime.now().difference(startr).inMicroseconds/1000));
+          // log((times.reduce((a, b) => a+b)/times.length).toString());
+
+         log(index.toString());
           if(index==max) {
-            if (map['message'].split('@@@')[0] == "STREAMING") {
+            log(messageBuffer.length.toString()+'===================================');
+            index=0;
+
+            if (header == "STREAMING") {
               Uint8List image;
               try{
-                image=base64Decode(message);
+                image=base64Decode(messageBuffer.toString());
               }catch(e){
                 return;
               }
@@ -374,10 +459,10 @@ class HomeState extends State<Home> {
               });
             }
 
-            else if (map['message'].split('@@@')[0] == "WEBCAM") {
+            else if (header == "WEBCAM") {
               Uint8List image;
               try{
-                image=base64Decode(message);
+                image=base64Decode(messageBuffer.toString());
               }catch(e){
                 return;
               }
@@ -391,9 +476,9 @@ class HomeState extends State<Home> {
               });
             }
 
-            else if (map['message'].split('@@@')[0] == "TASK_MANAGER") {
+            else if (header == "TASK_MANAGER") {
               log('TASK_MANAGER');
-              var windows=message.split('#');
+              var windows=messageBuffer.toString().split('#');
 
               List<String> windowsTitle = [];
               List<Uint8List?> windowsIcon = [];
@@ -438,20 +523,46 @@ class HomeState extends State<Home> {
               });
             }
 
-            else if (map['message'].split('@@@')[0] == "CLIPBOARD_IMAGE") {
+            else if (header == "CLIPBOARD_IMAGE") {
               log('SHARE_CLIPBOARD_IMAGE');
-                Uint8List? image;
-                try{
-                  image=base64Decode(message);
-                }catch(e){
-                  print('err');
-                  return;
-                }
-                StoreKeyValue.writeFile(image, 'SharedImage ${
+              Uint8List? image;
+              try{
+                image=base64Decode(messageBuffer.toString());
+              }catch(e){
+                print('err');
+                return;
+              }
+              StoreKeyValue.writeImage(image, 'SharedImage ${
                   DateFormat('yyyy-MM-dd HH-mm-ss').format(DateTime.now())}.jpg');
-                SnackBarGenerator.makeSnackBar(context, 'Pc screenshot saved to gallery!',color: Colors.amber.shade600);
+              // SnackBarGenerator.makeSnackBar(context, 'Pc screenshot saved to gallery!',color: Colors.amber.shade600);
             }
+
+            else if (header == "CLIPBOARD_IMAGE"){
+              Clipboard.setData(ClipboardData(text: messageBuffer.toString()));
+            }
+
+            else if (header.toString().contains('FILE_FROM_SERVER')) {
+              log('FILE_FROM_SERVER');
+              String fileName=header.split(':')[1].split('.')[0];
+              String fileExtension=header.split(':')[1].split('.')[1];
+              Uint8List? file;
+              try{
+                file=base64Decode(messageBuffer.toString());
+              }catch(e){
+                print('err--->'+e.toString());
+                return;
+              }
+              StoreKeyValue.writeFile(file,fileName,fileExtension);
+              // SnackBarGenerator.makeSnackBar(context, 'Pc screenshot saved to gallery!',color: Colors.amber.shade600);
+            }
+
+            print('[$header] receiverd, took ---> ${(DateTime.now().difference(messageStart).inMicroseconds/1000)} millis');
+            index=0;
           }
+          else{
+          index++;
+          }
+
         });
 
 
@@ -536,7 +647,12 @@ class HomeState extends State<Home> {
 
   poolingImOnline() async {
     Future.delayed(const Duration(seconds: 5), () {
+      try{
       sendOnline();
+      }
+      catch(e){
+        log('Could not sent online ---> '+e.toString());
+      }
 /*
       requestData(context, HttpType.get, '/login',
           {'token': Home.token, 'imTheClient': 'true'});
