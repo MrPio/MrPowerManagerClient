@@ -1,19 +1,15 @@
-# mr_power_manager_client
+# MrPowerManager [App]
 
 Remotely manage your pc
 
-## Getting Started
+<div align="center">
+<img alt="Logo" height="200" src="assets/images/logo3.png" width="200" />
+<div align="left">
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-
-#### Soon better readme with screenshoots
+# **NutritionStats**
+Project made for the Object-Oriented Programming course a.a. 2021/2022
+#### Note:
+> The code is fully covered with a plentiful documentation (JavaDoc): (**now online**)
+>
+> *https://clever-mccarthy-a6b47e.netlify.app/*
+----------------------------------------------------------------------------------------------------------------------------------------
