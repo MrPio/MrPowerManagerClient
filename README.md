@@ -86,16 +86,13 @@ The user can register its logins (url, username, passeord) and once this is done
 
 ### In This Screen the user can control the pc WEBCAM, the pc KEYBOARD and its SCREEN
 
-<img alt="API" height="480" src="https://user-images.githubusercontent.com/22773005/185809609-80c98af1-3d59-4fe4-8550-f3f00ed5b0c8.png"/>    
-
----
 <img alt="API" height="480" src="https://user-images.githubusercontent.com/22773005/185810215-ab5b579e-07a5-4e1d-b0d2-b1ff50648e42.png"/> 
 <img alt="API" height="480" src="https://user-images.githubusercontent.com/22773005/185810216-8b1ae3a8-496b-45f9-9f4c-35c0314ad3bc.png"/> 
 <img alt="API" height="480" src="https://user-images.githubusercontent.com/22773005/185810217-948ccc67-e260-46d1-a491-e0d64cf7c3d2.png"/> 
 <img alt="API" height="480" src="https://user-images.githubusercontent.com/22773005/185810219-d8170728-41b2-4adc-9b52-0cce1a3140b7.png"/> 
 
-<img alt="API" height="420" src="https://user-images.githubusercontent.com/22773005/185810223-a105b8a7-77fd-4309-a0be-4671cd0f5b21.jpg"/> 
-<img alt="API" height="420" src="https://user-images.githubusercontent.com/22773005/185810227-b68ad2f2-55a5-4a6a-977f-7dad2309ec8b.jpg"/> 
-<img alt="API" height="420" src="https://user-images.githubusercontent.com/22773005/185810224-9e739117-4acd-4c9d-9f0f-4690faf494b8.jpg"/> 
-<img alt="API" height="420" src="https://user-images.githubusercontent.com/22773005/185810225-4f61e87c-5bb7-4263-a1e2-6b2472d31016.jpg"/> 
+<img alt="API" height="380" src="https://user-images.githubusercontent.com/22773005/185810223-a105b8a7-77fd-4309-a0be-4671cd0f5b21.jpg"/> 
+<img alt="API" height="380" src="https://user-images.githubusercontent.com/22773005/185810227-b68ad2f2-55a5-4a6a-977f-7dad2309ec8b.jpg"/> 
+<img alt="API" height="380" src="https://user-images.githubusercontent.com/22773005/185810224-9e739117-4acd-4c9d-9f0f-4690faf494b8.jpg"/> 
+<img alt="API" height="380" src="https://user-images.githubusercontent.com/22773005/185810225-4f61e87c-5bb7-4263-a1e2-6b2472d31016.jpg"/> 
 
